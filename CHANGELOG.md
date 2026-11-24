@@ -23,7 +23,7 @@
   tick, with `FEE_USD` at that price and `FILL_NOW_PRICE` today's ask for the receipt;
   `fund_usdc` covers it. The ladder still starts at the mark and walks toward the live
   ask; only the deadline may pay more, never past what the owner agreed.
-- **A worked buy is quick by default, and said as it runs.** 30 minutes for a buy
+- **A worked buy is quick by default, and said as it runs.** 60 minutes for a buy
   (240 for a sale or close): each 1% the market moves while it waits is worth $50-140
   on a $500 option, against a saving of $5-10. "Until I cancel" is said as 24 hours,
   the most the recipe takes. The same chat promised a 10-day run and "no forced buy at

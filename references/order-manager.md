@@ -41,7 +41,7 @@ The figure is live. A re-quote that changes it is said with why ("the price move
 
 ## How long
 
-`WORK_MINUTES` is theirs. None named: **30 for a buy**, 240 for a sale or a close; 15 for
+`WORK_MINUTES` is theirs. None named: **60 for a buy**, 240 for a sale or a close; 15 for
 "quick". The longest is 1,440 (24 hours). "Until I cancel", "as long as it takes": say
 24 hours is the longest, and that the longer a buy waits, the more likely it misses the
 move they are betting on: the option gets dearer as the market moves their way. Never
@@ -122,8 +122,8 @@ if only the owner can resume it, ask them to, and say why.
 
 Short paragraphs, one idea each, the question on its own line. Beat 5 of a buy offer:
 
-"I'll buy it with the order manager. It waits at Derive's fair price for up to 30
-minutes instead of paying the asking price: up to $5.25 (1.1%) saved, mostly in fees.
+"I'll buy it with the order manager. It waits at Derive's fair price for up to an
+hour instead of paying the asking price: up to $5.25 (1.1%) saved, mostly in fees.
 
 If no one sells to it by then, it buys at the asking price, as long as that is still
 under your ceiling.
@@ -134,7 +134,7 @@ approvals. What it doesn't spend waits there until you ask me to bring it home.
 Or I can buy it now. Either way, you can lose the whole $499.74 - yes?"
 
 Filed: "It's set up. Approve the $510 funding card and it starts; you'll hear when it
-fills, or in 30 minutes with what it paid."
+fills, or in an hour with what it paid."
 
 Stopped: "I've told it to stop. It takes its order off the book within a minute and
 sends you what filled."
