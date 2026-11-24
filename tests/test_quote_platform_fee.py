@@ -107,11 +107,16 @@ class PlatformFeeTest(unittest.TestCase):
     def test_a_derive_quote_carries_the_order_managers_settings(self):
         buy, _ = self.quote({"platformFeeRate": 0}, "--side", "buy", "--product", "call", "--underlying", "ETH",
                             "--size", "1", "--strike", "1900")
+        # Worked, a buy may pay what the ordinary one may: its $53.66 ceiling, $52.50 a
+        # contract on the tick; the receipt still measures against today's $50 ask.
         self.assertEqual(buy["worked"], {
-            "params": {"INSTRUMENT": ETH_CALL, "ACTION": "buy", "SIZE": 1.0, "WORST_PRICE": 50.0,
+            "params": {"INSTRUMENT": ETH_CALL, "ACTION": "buy", "SIZE": 1.0, "WORST_PRICE": 52.5,
                        "FEE_USD": 1.1, "SIZE_STEP": 0.01, "MIN_SIZE": 0.01, "TICK_SIZE": 0.1,
-                       "MAKER_FEE_RATE": 0.0001},
-            "fund_usdc": 53, "at_mark_saves_usd": 1.0})
+                       "MAKER_FEE_RATE": 0.0001, "FILL_NOW_PRICE": 50.0},
+            "fund_usdc": 55, "at_mark_saves_usd": 1.0,
+            # $1 to the mark, plus the $1.10 taker fee less the $0.20 maker fee
+            "saves_up_to_usd": 1.9, "saves_up_to_pct": 3.8, "price_saves_usd": 1.0,
+            "fee_saves_usd": 0.9})
         back, _ = self.quote({"platformFeeRate": 0}, *CLOSE[1:])
         self.assertEqual((back["worked"]["params"]["ACTION"], back["worked"]["params"]["WORST_PRICE"],
                           back["worked"]["fund_usdc"], back["worked"]["at_mark_saves_usd"]),
@@ -149,6 +154,52 @@ class PlatformFeeTest(unittest.TestCase):
         code, _, err = run(helper(account({"platformFeeRate": 0})[0]), *CLOSE, "--platform-fee-rate", "0")
         self.assertEqual(code, 2)
         self.assertIn("unrecognized arguments", err)
+
+
+class WorkedSavingTest(unittest.TestCase):
+    """What the order manager could save, as the offer says it: the price and the fee."""
+
+    def quote(self, ticker, *argv, rate=0.0):
+        h = helper(account({"platformFeeRate": rate})[0])
+        h.tickers_for = lambda cur, expiry: {ETH_CALL: ticker}
+        code, out, err = run(h, "quote", *argv)
+        self.assertEqual(code, 0, err)
+        return json.loads(out)
+
+    BUY = ("--side", "buy", "--product", "call", "--underlying", "ETH", "--strike", "1900")
+
+    def test_an_ask_at_the_mark_still_saves_the_fee(self):
+        w = self.quote(dict(TICKER, a="49"), *self.BUY, "--size", "10")["worked"]
+        # 0.5 + 0.0003 x 2000 x 10 = $6.50 taking; 0.0001 x 2000 x 10 = $2.00 resting
+        self.assertEqual((w["at_mark_saves_usd"], w["price_saves_usd"], w["fee_saves_usd"]), (0, 0, 4.5))
+        self.assertEqual((w["saves_up_to_usd"], w["saves_up_to_pct"]), (4.5, 0.9))
+
+    def test_a_bid_past_the_mark_caps_the_price_a_tick_above_it(self):
+        w = self.quote(dict(TICKER, b="49.5"), *self.BUY, "--size", "1")["worked"]
+        self.assertEqual(w["at_mark_saves_usd"], 1.0)
+        self.assertEqual(w["price_saves_usd"], 0.4)  # 50 - 49.6, not 50 - 49
+
+    def test_the_bound_and_its_fee_fit_the_ceiling_and_the_wallet(self):
+        for rate in (0, 0.005):
+            q = self.quote(TICKER, *self.BUY, "--budget", "500", rate=rate)
+            p, w = q["worked"]["params"], q["worked"]
+            self.assertGreaterEqual(p["WORST_PRICE"], q["ask_price"])
+            self.assertEqual(p["FILL_NOW_PRICE"], q["ask_price"])
+            need = p["WORST_PRICE"] * p["SIZE"] + p["FEE_USD"]
+            self.assertLessEqual(need, q["max_cost_usd"] + 0.01)
+            self.assertGreaterEqual(w["fund_usdc"], need * 1.02)
+
+    def test_a_close_cannot_rest_so_saves_no_fee(self):
+        w = self.quote(TICKER, *CLOSE[1:])["worked"]
+        self.assertEqual((w["fee_saves_usd"], w["price_saves_usd"], w["saves_up_to_usd"]), (0, 1.0, 1.0))
+        self.assertNotIn("FILL_NOW_PRICE", w["params"])
+
+    def test_paradex_is_never_worked(self):
+        h = helper(account({"platformFeeRate": 0})[0])
+        self.assertEqual(h.worked("buy", ETH_CALL, INST, 1, 50, 1, 49), {"worked": h.worked(
+            "buy", ETH_CALL, INST, 1, 50, 1, 49)["worked"]})
+        h.V = {"id": "paradex", "name": "Paradex"}
+        self.assertEqual(h.worked("buy", ETH_CALL, INST, 1, 50, 1, 49), {})
 
 
 if __name__ == "__main__":

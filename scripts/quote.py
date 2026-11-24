@@ -469,25 +469,64 @@ def check_fees(q, drag):
 WORKED_MIN_FUND_USD = 12
 
 
-def worked(action, name, inst, size, price, fee, mark, need_usd=0.0):
+def worked(action, name, inst, size, price, fee, mark, need_usd=0.0, worst=None,
+           other=0.0, index=0.0, venue_fee=None):
     """Derive only: what the options-order-manager duty takes to work this trade for a
     better price than `price`, the book's now. `params` are its settings as they are,
     `fund_usdc` what its own wallet starts with (0: it trades what that wallet's account
-    already holds), `at_mark_saves_usd` the most it could save, a fill at Derive's mark."""
+    already holds), `at_mark_saves_usd` the price alone at Derive's mark.
+
+    `worst` is the owner's bound per contract (default `price`; a buy passes its ceiling,
+    so a worked buy may pay what an ordinary buy may), with `fee` the fee at that bound.
+    `saves_up_to_usd` is the most working it could save, said with `saves_up_to_pct` of
+    the premium: the price to a fill at the mark, or a tick inside the far side of the
+    book (`other`) when that is past the mark, plus Derive's taker fee less its maker fee
+    (`venue_fee`, `index`) for an order that can rest; a close cannot."""
     if V["id"] != "derive" or price <= 0:
         return {}
     selling = action == "open" or (action == "close" and need_usd < 0)
+    worst = price if worst is None else worst
+    tick = num(inst.get("tick_size")) or 0.1
+    maker_rate = num(inst.get("maker_fee_rate")) or 0.0001
     saves = (mark - price if selling else price - mark) * size if mark > 0 else 0.0
+    if mark <= 0:
+        reach = price
+    elif selling:
+        reach = other - tick if 0 < other and other - tick < mark else mark
+    else:
+        reach = other + tick if other > 0 and other + tick > mark else mark
+    price_saves = max((reach - price) if selling else (price - reach), 0.0) * size
+    fee_saves = 0.0
+    if action != "close" and venue_fee is not None and index > 0:
+        fee_saves = max(venue_fee - maker_rate * index * size, 0.0)
+    up_to = price_saves + fee_saves
+    premium = price * size
     fund = max(int(math.ceil(need_usd * 1.02)), WORKED_MIN_FUND_USD) if need_usd > 0 else 0
+    params = {"INSTRUMENT": name, "ACTION": action, "SIZE": size, "WORST_PRICE": worst,
+              "FEE_USD": rnd(fee, 2), "SIZE_STEP": num(inst.get("amount_step")),
+              "MIN_SIZE": num(inst.get("minimum_amount")), "TICK_SIZE": tick,
+              "MAKER_FEE_RATE": maker_rate}
+    if worst != price:
+        params["FILL_NOW_PRICE"] = price
     return {"worked": {
-        "params": {"INSTRUMENT": name, "ACTION": action, "SIZE": size, "WORST_PRICE": price,
-                   "FEE_USD": rnd(fee, 2), "SIZE_STEP": num(inst.get("amount_step")),
-                   "MIN_SIZE": num(inst.get("minimum_amount")),
-                   "TICK_SIZE": num(inst.get("tick_size")) or 0.1,
-                   "MAKER_FEE_RATE": num(inst.get("maker_fee_rate")) or 0.0001},
+        "params": params,
         "fund_usdc": fund,
         "at_mark_saves_usd": rnd(max(saves, 0.0), 2),
+        "saves_up_to_usd": rnd(up_to, 2),
+        "saves_up_to_pct": rnd(up_to / premium * 100, 1) if premium > 0 else 0.0,
+        "price_saves_usd": rnd(price_saves, 2),
+        "fee_saves_usd": rnd(fee_saves, 2),
     }}
+
+
+def worked_buy_worst(inst, ask, size, max_cost, venue_fee):
+    """A worked buy's bound per contract: the ceiling an ordinary buy carries
+    (`max_cost_usd`, fees in), on Derive's tick and never under today's ask."""
+    tick = num(inst.get("tick_size")) or 0.1
+    if size <= 0:
+        return ask
+    each = (max_cost - venue_fee) / (size * (1 + PLATFORM["rate"]))
+    return max(ask, rnd(math.floor(each / tick + 1e-9) * tick, 8))
 
 
 def settle(q, waived):
@@ -612,7 +651,8 @@ def build_quote(product, underlying, collateral_usd, tenor="monthly",
         "valid_until": iso(now + QUOTE_TTL_SEC),
     })
     if opt_type == "P":
-        q.update(worked("open", inst["instrument_name"], inst, size, bid, fee, mark, strike * size))
+        q.update(worked("open", inst["instrument_name"], inst, size, bid, fee, mark, strike * size,
+                        other=num(t.get("a")), index=spot, venue_fee=venue_fee))
     if dte > 0 and locked_usd > 0:
         q["apr_pct"] = rnd(net / locked_usd * (365 / dte) * 100, 2)
     if opt_type == "P":
@@ -801,7 +841,12 @@ def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
         "mark_iv_pct": rnd(mark_iv * 100, 2),
         "valid_until": iso(now + QUOTE_TTL_SEC),
     })
-    q.update(worked("buy", inst["instrument_name"], inst, size, ask, fee, mark, gross + fee))
+    # Worked, the buy may pay what the ordinary one may: its ceiling, per contract.
+    worst = worked_buy_worst(inst, ask, size, max_cost, venue_fee)
+    fee_worst = venue_fee + platform_fee(worst * size)
+    q.update(worked("buy", inst["instrument_name"], inst, size, ask, fee_worst, mark,
+                    worst * size + fee_worst, worst=worst, other=num(t.get("b")), index=spot,
+                    venue_fee=venue_fee))
 
     if ask_sz < size:
         q["warnings"].append(

@@ -33,7 +33,9 @@ Butler never picks the trade. "Just buy whatever looks good", "you pick", "the b
 one": say Butler does not choose trades, and ask which asset, the most they will
 spend, and roughly when it should expire. Quote nothing until they have named an
 asset and an amount. Never make up a budget, even a small one. Monthly by default:
-weeklies lose too much to fees and the spread.
+weeklies lose too much to fees and the spread. Asked for ideas once they have named
+those, give the choices first; "the pick is yours" comes after them, never as the
+opening sentence.
 
 The helper's strike rule is a starting point, said as one, with the quote's own
 numbers: "That is a call about 5% above today's price, expiring 30 October. Nearer,
@@ -62,7 +64,7 @@ Every number is a **field on the buy quote**. Never compute one.
 
 ## The shape
 
-Four beats, in this order:
+Four beats, in this order, and on Derive a fifth before the yes:
 
 1. **It is a bet: today's price, the ceiling, and the most it can lose.** "This is not
    yield. About $190.03 at today's price ($189.38 premium plus $0.65 in fees). The order
@@ -74,6 +76,9 @@ Four beats, in this order:
    $2,664, and each day ETH stands still it is worth a little less."
 4. **The date.** "It settles on 30 October at <`expiry`'s time>; you can sell it back
    before then."
+5. **How it is bought (Derive, a quote with `worked`).** The order manager, offered by
+   default with what it could save in dollars and percent, and buying now as the other
+   choice: `order-manager.md` § Say to the owner. Filed only as `order-manager.md` says.
 
 For a put, the same with "below": "If ETH is below $2,350 on 30 October, the put pays
 $3.45 for every dollar below that; it only beats its cost below about $2,295."
@@ -95,6 +100,8 @@ after that yes. Never pick a different ceiling for them.
 - With a budget, never over `budget_usd`; for more, quote again with the new budget.
 - Less room means more no-fills. A buy that does not fill moved past their ceiling:
   re-quote and re-ask, never re-file the same ceiling.
+- Worked by the order manager, the buy carries the same ceiling (`worked.params`): it
+  starts at Derive's fair price and may pay up to it, never more.
 
 ## Words
 
@@ -167,6 +174,8 @@ outcome, for every option the account holds. Nothing is filed for it per buy.
 A bought option pays cash and buys nothing, so it is never `options-put-delivery`.
 
 ## Say to the owner
+
+On Derive, beat 5 follows before the yes (`order-manager.md` § Say to the owner).
 
 "This is a bet, not yield. 2.95 ETH calls at $2,600: about $190.03 at today's price
 ($189.38 premium plus $0.65 in fees). The order allows 5% for the price moving before

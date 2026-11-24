@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.17.3
+
+- **The order manager is offered on every Derive buy, with what it could save.** Seen in
+  a live chat (24 Nov): asked to buy a $500 ETH put "via the order manager", Butler said
+  it could save "$2.03 at best", $0 on the other two strikes, then $2.71 for the same
+  put a few minutes later. `order-manager.md` offered it only when asked; `buying.md`
+  now has a fifth beat on Derive: the order manager by default, buying now as the
+  other choice. A sale or close is still worked only when asked.
+- **The saving counts the fee.** `worked.at_mark_saves_usd` was the price to the mark
+  alone, so a book already at the mark said $0. A resting fill pays Derive's maker fee
+  (0.01% of the index) instead of the taker fee (0.03% plus a $0.50 base), and on
+  cheap options that is most of the saving. `worked` adds `saves_up_to_usd` and
+  `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`); a bid already
+  past the mark caps the price a tick above it, and a close, which cannot rest, saves no
+  fee. Live, 24 Nov, $500 each: the ETH 4 Dec $1,600 put $0 -> $5.25 (1.1%); the
+  $1,500 put $0 -> $9.73 (2.1%); the ETH 25 Dec $2,000 call $28.58 -> $28.24 (6.1%),
+  its bid above the mark. `at_mark_saves_usd` stays, unused by the offer.
+- **A worked buy carries the ordinary buy's ceiling.** `WORST_PRICE` was today's ask
+  exactly, so a worked buy could fail where a buy now would fill (the same chat: a
+  4-hour run that bought nothing). It is now `max_cost_usd` per contract on Derive's
+  tick, with `FEE_USD` at that price and `FILL_NOW_PRICE` today's ask for the receipt;
+  `fund_usdc` covers it. The ladder still starts at the mark and walks toward the live
+  ask; only the deadline may pay more, never past what the owner agreed.
+- **A worked buy is quick by default, and said as it runs.** 30 minutes for a buy
+  (240 for a sale or close): each 1% the market moves while it waits is worth $50-140
+  on a $500 option, against a saving of $5-10. "Until I cancel" is said as 24 hours,
+  the most the recipe takes. The same chat promised a 10-day run and "no forced buy at
+  the end"; neither is what the duty does. A change while it runs is said from
+  `duty_show`, and the deadline is said as it is: it takes the book inside the ceiling.
+- **Money left in an earlier order's wallet is found and said.** Before a new order
+  wallet, the finished order-manager duties' wallets are read, and free USDC there is
+  offered home. After a receipt, so is what was not spent.
+- **Ideas come before "the pick is yours".** `buying.md`: asked for ideas, the choices
+  come first and the not-advice line after them, never as the opening sentence.
+
 ## 2.17.2
 
 - **An ask that says "buy" is not the yes: nothing is filed before the owner answers the

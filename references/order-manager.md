@@ -6,23 +6,47 @@ market makers, rests an order at Derive's own mark, and gives ground toward the 
 step by step, never past the price the owner agreed. Most orders a maker will take fill
 in the first minute; the rest wait, and may not fill at all.
 
-It is the owner's choice, never Butler's: offer it only when they ask for a better
-price or to take their time ("get me a better price", "work the order", "don't just pay
-the ask", "no rush"). **Derive only**, a cash-secured put sold or an option bought.
-Paradex and Rysk: say it works on Derive only.
+**Offered on every Derive buy.** A buy quote with `worked` is offered worked by
+default, in the offer itself (`buying.md` § The shape, beat 5): how it works and what it
+could save, in one short paragraph, with buying now as the other choice. The choice
+stays theirs: "buy it now", "just buy it" files the ordinary buy. A put sale or a close
+is worked only when they ask ("get me a better price", "work the order", "no rush").
+**Derive only**: on Paradex and Rysk, say it works on Derive only.
 
 ## What is different, said before the yes
 
 1. **It trades from a wallet of its own.** The money leaves their main wallet on one
    funding card, and from then on the duty trades with no further approval, inside the
-   worst price they agreed.
-2. **It may not fill.** If the market moves away, nothing trades by the deadline and the
-   money waits in that wallet's Derive account.
+   ceiling they agreed. What it does not spend waits in that wallet's Derive account
+   until they ask to bring it home (§ Afterwards).
+2. **How it ends.** It starts at Derive's fair price and moves toward today's price. If
+   nothing fills by the deadline, it takes the book, as long as the price is still
+   inside their ceiling; past it, nothing is bought. Never say "if no one sells for
+   less, nothing is bought": at the deadline it buys at the book's price.
 3. **What it buys or sells stays in that account**, shown as its own Platforms row
    ("Derive · <the duty's title>"), not with their main Derive positions.
 
 SKILL.md's "Never file without all four" holds unchanged: the bad case first, the plain
 yes, and a quote run after their last answer.
+
+## The saving
+
+Say `worked.saves_up_to_usd` with `worked.saves_up_to_pct` of the premium: "up to $5.25
+(1.1%)", never as a promise. It is two parts: the price, to a fill at Derive's mark
+(`price_saves_usd`), and the fee, because a resting fill pays Derive's maker fee, not
+the taker fee (`fee_saves_usd`). When the fee is most of it, say "mostly in fees". Never
+offer `at_mark_saves_usd`: it leaves the fee out and says $0 on a book already at the mark.
+
+The figure is live. A re-quote that changes it is said with why ("the price moved").
+
+## How long
+
+`WORK_MINUTES` is theirs. None named: **30 for a buy**, 240 for a sale or a close; 15 for
+"quick". The longest is 1,440 (24 hours). "Until I cancel", "as long as it takes": say
+24 hours is the longest, and that the longer a buy waits, the more likely it misses the
+move they are betting on: the option gets dearer as the market moves their way. Never
+promise a run past 24 hours, or no buy at the end: the deadline always tries the book
+inside the ceiling.
 
 ## Filing it
 
@@ -30,16 +54,21 @@ yes, and a quote run after their last answer.
 
    | Field | Means |
    | --- | --- |
-   | `worked.params` | the duty's settings, passed as they are. `WORST_PRICE` is the book's price per contract now: the bid selling, the ask buying |
-   | `worked.fund_usdc` | what the duty's wallet starts with: the collateral or the cost, plus the fee and 2% for the bridge, never under $12 |
-   | `worked.at_mark_saves_usd` | the most working it could save: a fill at Derive's mark. Say "up to", never as a promise |
+   | `worked.params` | the duty's settings, passed as they are. `WORST_PRICE` is the bound per contract: the bid selling; buying, the ceiling an ordinary buy carries (`max_cost_usd`), with `FILL_NOW_PRICE` today's ask for the receipt |
+   | `worked.fund_usdc` | what the duty's wallet starts with: the collateral, or the cost at the ceiling, plus the fee and 2% for the bridge, never under $12 |
+   | `worked.saves_up_to_usd`, `worked.saves_up_to_pct` | the most working it could save, price and fee (§ The saving) |
 
    No `worked`: the quote is not Derive's, or has no live price; it cannot be worked.
-2. Offer it with step 3's sentences, then the three points above, the worst price
-   ("never under $41 for each ETH" selling, "never over $50" buying), how long
-   (`WORK_MINUTES`, theirs; 240 if they name none, 15 for "quick"), and `fund_usdc`.
-   A worse `WORST_PRICE` only if they name it. Get a yes.
-3. A new wallet for it, then the duty:
+2. Offer it as `buying.md` beat 5, or for a sale or close with step 3's sentences, then
+   the three points above, the ceiling ("never over $35.20 for each ETH" buying, "never
+   under $41" selling), how long, and `fund_usdc`. The yes to a buy is the yes to
+   `max_cost_usd`. A lower ceiling of their own: set `WORST_PRICE` to `FILL_NOW_PRICE`
+   (today's price), which stays inside it. Get a yes.
+3. **Money left from an earlier one.** Before a new wallet, `duty_list`: each finished
+   `options-order-manager@1` duty names its `walletId`. `acp options account --venue
+   derive --wallet <LABEL>` on each: free USDC there is said once ("$486 is still in the
+   wallet from your last order") with the offer to bring it home, never left unsaid.
+4. A new wallet for it, then the duty:
 
    ```sh
    bevo-wallet create --chain ethereum --label <LABEL> --idempotency-key <KEY>:wallet
@@ -56,10 +85,14 @@ yes, and a quote run after their last answer.
    Tell the owner to approve the funding card. No `acp options` command is filed from
    the chat. Make sure SKILL.md step 9's `options-lifecycle` duty exists: it watches
    what this wallet's account holds to expiry, as it does every other option.
-4. The duty tells the owner when it starts, on each part fill, and at the end with a
+5. The duty tells the owner when it starts, on each part fill, and at the end with a
    receipt: the average price, what that saved against the book, and where each fill
    came from. Then it finishes. Never poll it; `duty_show` and `duty_logs` when they
    ask how it is going.
+
+**A change while it runs** ("give it longer", "keep going"): `duty_update` its params,
+every other setting unchanged, then `duty_show`, and say only what the updated settings
+do. A setting the recipe refuses is said as refused, never as done.
 
 ## Stopping it
 
@@ -80,20 +113,28 @@ if only the owner can resume it, ask them to, and say why.
   duty with that quote's `worked.params` (a new order; a close is worked by the makers
   and the book only). To close now: step 5's `acp options close … --wallet <LABEL>`, a card.
 - **Bring the money home:** `acp options withdraw --amount <USDC> --wallet <LABEL>`, as
-  step 8. `duty_delete` is refused while that account holds money, an order or a position.
+  step 8. After the receipt, offer it for what was not spent. `duty_delete` is refused
+  while that account holds money, an order or a position.
 - At expiry Derive settles in cash into that same account; the lifecycle duty gives
   the heads-up and the outcome, naming this wallet.
 
 ## Say to the owner
 
-"Instead of paying the $50 ask now, I can work it: ask Derive's market makers and wait
-at a better price for up to 4 hours, never paying over $50 for each ETH. It could save
-up to $1.00; it may also not fill, and then nothing is bought. It trades from a wallet
-of its own that you fund once with $53, with no approval after that, and what it buys
-stays in that wallet's Derive account. You can lose all of what it pays. Yes?"
+Short paragraphs, one idea each, the question on its own line. Beat 5 of a buy offer:
 
-Filed: "It's set up. Approve the $53 funding card and it starts; you'll hear when it
-fills or when the 4 hours are up."
+"I'll buy it with the order manager. It waits at Derive's fair price for up to 30
+minutes instead of paying the asking price: up to $5.25 (1.1%) saved, mostly in fees.
+
+If no one sells to it by then, it buys at the asking price, as long as that is still
+under your ceiling.
+
+It trades from a wallet of its own: approve one $510 card and it needs no more
+approvals. What it doesn't spend waits there until you ask me to bring it home.
+
+Or I can buy it now. Either way, you can lose the whole $499.74 - yes?"
+
+Filed: "It's set up. Approve the $510 funding card and it starts; you'll hear when it
+fills, or in 30 minutes with what it paid."
 
 Stopped: "I've told it to stop. It takes its order off the book within a minute and
 sends you what filled."
