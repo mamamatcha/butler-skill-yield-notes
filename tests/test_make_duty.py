@@ -60,7 +60,7 @@ class Build(unittest.TestCase):
         self.assertEqual(code, 0)
         duty = answer["duty_create"]
         self.assertEqual(duty["walletId"], "eth-puts")
-        self.assertEqual(duty["fundUsdc"], 1020)
+        self.assertEqual(duty["fundUsdc"], 1002)
         self.assertNotIn("pocketUsdc", duty)
         self.assertNotIn("code", duty)
         self.assertEqual(duty["title"], "{NAME}")
@@ -84,8 +84,8 @@ class Build(unittest.TestCase):
         self.assertNotIn("NotImplementedError", saved)
         self.assertIn('["acp", "options", *args, "--idempotency-key", key]', saved)
 
-    def test_funding_is_the_amount_set_aside_plus_two_percent(self):
-        for aside, need, fund in (("10", "9.79", 11), ("15", "10", 16), ("100", "80", 102)):
+    def test_funding_is_the_amount_set_aside_plus_two_percent_at_most_two_dollars(self):
+        for aside, need, fund in (("11", "9.79", 12), ("15", "10", 16), ("100", "80", 102), ("500", "80", 502)):
             _, answer, _ = self.run_it("--wallet", "own", "--wallet-label", "w", "--set-aside", aside,
                                        "--need", need, "--param", "STRIKE=1")
             self.assertEqual(answer["duty_create"]["fundUsdc"], fund)
@@ -94,7 +94,7 @@ class Build(unittest.TestCase):
         code, answer, _ = self.run_it("--wallet", "main", "--free", "50")
         self.assertEqual(code, 0)
         self.assertNotIn("duty_create", answer)
-        self.assertEqual(answer["deposit_first"]["amount_usdc"], 969)
+        self.assertEqual(answer["deposit_first"]["amount_usdc"], 952)
 
     def test_main_wallet_covered_proposes_the_amount_set_aside(self):
         _, answer, _ = self.run_it("--wallet", "main", "--free", "1000")
@@ -179,7 +179,7 @@ class AutoRollPreset(unittest.TestCase):
                                         "--end-at", day, "--max-loss", "500", "--param", "UNDERLYING=ETH")
         self.assertEqual(code, 0, err)
         duty = answer["duty_create"]
-        self.assertEqual(duty["fundUsdc"], 5100)
+        self.assertEqual(duty["fundUsdc"], 5002)
         self.assertEqual(duty["walletId"], "weekly-eth-puts")
         params = json.loads(duty["params"])
         self.assertEqual({k: params[k] for k in ("UNDERLYING", "END_AT", "MAX_LOSS_USD",

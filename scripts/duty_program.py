@@ -25,6 +25,7 @@ HOME_WAIT = 24 * 3600  # how long a venue withdrawal may take to reach its walle
 Q = {} if VENUE == "derive" else {"venue": VENUE}
 FROM = ["--from", "8453"] if VENUE == "derive" else ["--venue", VENUE]
 WHERE = VENUE.title()
+MIN_DEPOSIT = 11  # the server refuses a deposit under it
 S = bevo.state
 
 
@@ -129,7 +130,7 @@ def move_in(free):
     if not OWN or time.time() - S.get("deposit_at", 0) < 600:
         return False
     cash = bevo.balance().cash_usd
-    if cash is None or cash < 10:
+    if cash is None or cash < MIN_DEPOSIT:
         return False
     n = S.get("deposits", 0)
     acp(bevo.key("deposit", bevo.SERVICE_ID, n), "deposit", "--amount", str(int(cash)), *FROM)
@@ -142,7 +143,7 @@ def move_in(free):
 def short(free, met, seen):
     """Short of the next trade: tell the owner once per balance, and once per missed fire."""
     gap = math.ceil(NEED - free)
-    ask = max(gap, 10) if OWN else gap  # its wallet moves nothing to the venue under $10
+    ask = max(gap, MIN_DEPOSIT) if OWN else gap  # its wallet moves nothing to the venue under it
     if S.get("low_at") != round(free):
         S["low_at"] = round(free)
         bevo.notify(f"{NAME}: ${free:,.0f} free on {WHERE}; its next trade needs ${NEED:,.0f}. "
