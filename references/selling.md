@@ -9,6 +9,10 @@ and keeping the fee. The premium is certain. What they own at expiry is not.
 
 ## Does it fit?
 
+- **Steady income?** Asked for steady or regular income, earning every week, or what you
+  recommend for earning: pitch auto-roll first, in its short shape (`duty.md` § Auto-roll),
+  not a single put and not a list of assets. A single put follows only if they turn it
+  down or ask for one.
 - **Would they buy the dip?** A note fits idle USDC whose owner would happily buy the
   asset lower. If not - or they want to earn on an asset they hold - there is no note
   here: say so and stop.
@@ -201,8 +205,8 @@ Never roll without a fresh yes, but through an auto-roll duty the owner set up f
 The smallest note is the quote's `min_size` x the strike, so it moves with the strike; a
 smaller one is refused with what the minimum needs (`collateral too small`). Fees make
 anything near it poor value.
-Monthly by default: weeklies lose far more of the premium to fees and the spread, and
-the quote warns when fees pass 15% of it.
+A single put is monthly by default: weeklies lose far more of the premium to fees and the
+spread, and the quote warns when fees pass 15% of it. Auto-roll is weekly by design.
 
 ## Say to the owner
 

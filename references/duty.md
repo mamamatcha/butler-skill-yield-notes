@@ -25,6 +25,9 @@ holds part of the free USDC), say so in one line; touch it only when they ask.
 
 ## Your first reply
 
+Auto-roll, or an owner who wants steady income, has its own first reply: the pitch in
+§ Auto-roll, not this one.
+
 Never file a duty in the turn it is asked, even when the ask names the time, the venue
 and the money, and free USDC already covers it: the wallet is the owner's to pick, so
 this reply recommends one and waits for their answer.
@@ -270,37 +273,73 @@ in the duty's wallet on Ethereum (Derive) or Arbitrum (Paradex), less the venue'
 ## Auto-roll
 
 A put sold every week from its own wallet, the next one as soon as the last settles, until
-an end date, a loss limit or the owner says stop: "auto-roll", "sell a put every week",
-"keep rolling my puts". Cash only: below the strike they pay the difference in cash, and it
-never buys the asset. Its rule is built in (`--preset auto-roll`); write no `rule.py`.
+an end date, a loss limit or the owner says stop. ETH or BTC, on Derive. Cash only: below
+the strike they pay the difference in cash, and it never buys the coin. Its rule is built
+in (`--preset auto-roll`); write no `rule.py`.
 
-1. **First reply**, as above, with two answers fixed: **its own wallet** (auto-roll runs
-   from its own wallet only, so the main wallet is not offered) and **Derive**. Ask how
-   much to set aside; one put needs at least `min_collateral_usd` from
-   `quote.py minimum --underlying <ASSET> --tenor weekly`.
-2. **Second reply, once the wallet and amount are confirmed:** quote the first put with
-   the duty's own rule, then make the offer, each line its own paragraph:
+**When to offer it.** First, before any single put, when the owner wants to earn steadily:
+"steady yield", "regular income", "passive income", "every week", "keep earning", or what
+you recommend for earning from options. And whenever they ask for it: "auto-roll", "sell a
+put every week", "keep rolling my puts". Not when they named one put (a strike or a date),
+want to end up owning the coin, or named Paradex, Rysk or a coin other than ETH or BTC:
+that is one put (`selling.md`). Offering it is not choosing a trade: **never name a coin
+they did not**; ask.
+
+Its replies are short: a bold label, a few bullets, the question on its own line. Never a
+paragraph where a bullet will do.
+
+1. **The pitch, your first reply.** It replaces "Your first reply": the wallet (its own)
+   and the venue (Derive) are fixed, so it says them and asks only the coin and the amount.
+   No tool call before it but each coin's floor, `min_collateral_usd` from
+   `quote.py minimum --underlying <ASSET> --tenor weekly`. In this shape:
+
+   > For steady income, I recommend our **auto-roll** skill.
+   >
+   > **How it works:**
+   > - Each week, I sell one put on Derive at least 8% below the price. You keep the fee.
+   > - When it ends, I pick the next best put and sell it.
+   > - If the price ends the week below the put, you pay the difference in cash.
+   > - It runs from its own wallet: you approve one card to fund it, then nothing.
+   >
+   > **To start, tell me:**
+   > - **Coin:** ETH (from about $150) or BTC (from about $540)?
+   > - **Amount:** set aside your $500 for it?
+
+   A coin they named: no coin line, and the amount line says it ("set aside your $500 for
+   it on ETH?"). No amount named: "how much do you want to set aside for it in total?"
+   Both named: one question, "Set aside your $500 for it on ETH?"
+2. **The first trade, once the coin and amount are confirmed.** Quote it with the duty's
+   own rule, then offer it in this shape:
 
    ```sh
    python3 ~/skills/options-trading/scripts/quote.py quote --product cash_secured_put --underlying <ASSET> --collateral <SET_ASIDE> --tenor weekly --otm-pct 8 --max-delta 0.15
    ```
 
-   > Best first trade for your $5,000: sell the ETH $1,500 put, expiring 4 Dec. Estimated yield: 33% a year.
+   > Here's the first trade for your $500:
    >
-   > If ETH ends below $1,500, you pay the difference in cash. At $1,400, that's about $333, less the $51 premium you keep.
-   >
-   > After that, I'll roll it weekly with what's left, targeting about 30% a year, until 23 Feb or if losses pass $500.
-   >
-   > You can stop me anytime.
+   > - **Sell:** ETH $1,400 put, ends 4 Dec
+   > - **You earn:** $2.84 now, about 23% a year
+   > - **Fees:** $0.69, all Derive's, no Virtuals platform fee
+   > - **If ETH ends below $1,400:** you pay the difference (about $35 at $1,300)
+   > - **After that:** a new put every week, aiming for about 20% a year
+   > - **Stops:** 24 Feb, or if losses pass $50. Or anytime you say.
    >
    > Start?
 
-   Strike, expiry and yield are the quote's (`apr_pct`); the premium kept is
-   `net_premium_usd`; the cash example is (strike minus a price about 7% under it) x
-   `size`. The target is `apr_pct` rounded down to a 5: an estimate the rule never
-   chases by selling nearer the price. End date and loss limit are theirs; unnamed,
-   offer 13 weeks and 10% of the amount set aside. Say the bad case if they ask what a
-   crash costs: `bad_case`.
+   All from the quote: the put (`strike`, `expiry`); **You earn** (`net_premium_usd`,
+   `apr_pct`); **Fees** as SKILL.md step 3 says them. The difference is (strike minus a
+   price about 7% under it) x `size`. The aim is `apr_pct` rounded down to a 5: an
+   estimate the rule never chases by selling nearer the price. End date and loss limit
+   are theirs; unnamed, offer 13 weeks and 10% of the amount set aside. Each of
+   `warnings` is one more bullet, as written. Asked what a crash costs: `bad_case`. A
+   refused quote: its reason as written, and stop.
+
+   Before an owner's first put ever, these come just before "Start?", a yes to each:
+
+   > Since it's your first put, I need a yes to each:
+   > - If ETH falls hard, you take the loss.
+   > - Your money is locked until each put ends.
+   > - Only the fee is guaranteed.
 3. **On yes:** `bevo-wallet create --chain ethereum --label <name>`, then build it and do
    what it prints (Filing it, step 4: one funding card, the amount set aside plus 2%, at most $2):
 
