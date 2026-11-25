@@ -138,7 +138,7 @@ lowest strike, or `null` when the put is that one. Puts only.
 | `valid_until` | 60 seconds after the read; quote again past it |
 | `waive` | present only when a safeguard was waived; passed to `--waive` |
 | `rfq_offer` | present only when the book is wide or holds less than the size: the last line of the offer, as written |
-| `worked` | Derive only, on a put sale, a buy, a close and a buy-back: the `options-order-manager` duty's settings (`params`; a buy's `WORST_PRICE` is its ceiling per contract, `FILL_NOW_PRICE` today's ask), what its wallet starts with (`fund_usdc`), and the most working it could save, said as `saves_up_to_usd` and `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`; `at_mark_saves_usd` is the price alone). Offered on every Derive buy; a sale or close only when asked (`order-manager.md`) |
+| `worked` | Derive only, on a put sale, a buy, a close and a buy-back: the `options-order-manager` duty's settings (`params`; a buy's `WORST_PRICE` is its ceiling per contract, `FILL_NOW_PRICE` today's ask), what its wallet starts with (`fund_usdc`), and the most working it could save, said as `saves_up_to_usd` and `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`; `at_mark_saves_usd` is the price alone). A buy adds `ask_over_fair_pct` and `recommended` (a premium of $1,000 or more with the ask 5% or more over the mark). One of the three ways on every Derive buy (`buying.md` beat 5), first when `recommended`; a sale or close only when asked (`order-manager.md`) |
 
 The spread is the share of the option's value the bid gives up (`1 - bid / mark`):
 over 10% warns, over 20% is the `spread` safeguard, and neither applies when it costs

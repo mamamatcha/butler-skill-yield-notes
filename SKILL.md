@@ -18,7 +18,7 @@ Your owner wants Derive, Paradex or Rysk options:
   **bought**; "get out of my put", "free my collateral" **buys back** a note they
   **sold**.
 - **At their price** - "or better", "cancel my order": `resting.md`.
-- **Every Derive buy, or "work the order"**: `order-manager.md`.
+- **A Derive buy: book, RFQ or order manager** (`buying.md` beat 5); "work the order": `order-manager.md`.
 - **Look or withdraw** - "my free USDC in Derive" (`freeForNewPutsUsd`, not wallet
   cash), "my positions": steps 1 and 9, then stop. "Withdraw my free USDC": step 8, never an
   `acp trade` (`account.md`). Listing: `listing.md`.

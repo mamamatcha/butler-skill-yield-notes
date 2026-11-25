@@ -11,8 +11,10 @@ first for one, and offer the order book. A duty's order goes by RFQ the same way
 
 ## When Butler brings it up
 
-An owner may not know RFQ exists. On Derive or Paradex, Butler offers it beside the order
-book, in one line and once per trade, in these three cases and no other:
+An owner may not know RFQ exists. **On a Derive buy, always**: it is one of the three ways
+(`buying.md` beat 5), so `rfq_offer` is not said again there. Otherwise, on Derive or
+Paradex, Butler offers it beside the order book, in one line and once per trade, in these
+three cases and no other:
 
 | When | How it shows |
 | --- | --- |
@@ -24,7 +26,7 @@ book, in one line and once per trade, in these three cases and no other:
   trade, after the quote's warnings and safeguards. The helper decides when: never add
   it to a quote that has none, and it has none for the smallest order (`min_size`).
 - **It is an offer, never a switch.** The owner picks the book or RFQ, and no answer
-  means the book.
+  means the book; on a Derive buy, the first way listed (`buying.md`).
 - **A safeguard still needs its yes.** Picking RFQ for a held trade is that yes: quote
   again with `--waive`, and file with `--waive <waive>` and `--order rfq`.
 - **Never for an empty book.** A quote that says `no live ask` or `no live bid` is not a

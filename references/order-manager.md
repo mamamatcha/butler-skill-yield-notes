@@ -6,14 +6,16 @@ market makers, rests an order at Derive's own mark, and gives ground toward the 
 step by step, never past the price the owner agreed. Most orders a maker will take fill
 in the first minute; the rest wait, and may not fill at all.
 
-**Offered on every Derive buy.** A buy quote with `worked` is offered worked by
-default, in the offer itself (`buying.md` § The shape, beat 5): how it works and what it
-could save, in one short paragraph, with buying now as the other choice. The choice
-stays theirs: "buy it now", "just buy it" files the ordinary buy. A put sale or a close
+**One of three ways on every Derive buy.** A buy quote with `worked` offers the order
+book, RFQ and the order manager (`buying.md` § The shape, beat 5). The order manager goes
+first, suggested, only when `worked.recommended` is true (§ The saving). The pick stays
+theirs: "buy it now", "just buy it" files the ordinary buy. A put sale or a close
 is worked only when they ask ("get me a better price", "work the order", "no rush").
 **Derive only**: on Paradex and Rysk, say it works on Derive only.
 
-## What is different, said before the yes
+## What is different
+
+Beat 5's line says the first two before the yes; the third is said when it is filed.
 
 1. **It trades from a wallet of its own.** The money leaves their main wallet on one
    funding card, and from then on the duty trades with no further approval, inside the
@@ -38,6 +40,12 @@ the taker fee (`fee_saves_usd`). When the fee is most of it, say "mostly in fees
 offer `at_mark_saves_usd`: it leaves the fee out and says $0 on a book already at the mark.
 
 The figure is live. A re-quote that changes it is said with why ("the price moved").
+
+**When it is suggested.** `worked.recommended` is true on a buy of $1,000 or more whose
+ask is 5% or more over Derive's mark: there waiting is worth the most. Then it goes
+first, with the reason in one sentence from `worked.ask_over_fair_pct` ("the asking
+price is 6.1% over Derive's fair price"). Otherwise it is listed third and never
+suggested, and once they pick another way it is not brought up again.
 
 ## How long
 
@@ -120,21 +128,17 @@ the duty's own chat).
 
 ## Say to the owner
 
-Short paragraphs, one idea each, the question on its own line. Beat 5 of a buy offer:
+Short paragraphs, one idea each, the question on its own line. Its line in a buy's
+three ways (`buying.md` § Say to the owner has the whole offer):
 
-"I'll buy it with the order manager. It waits at Derive's fair price for up to an
-hour instead of paying the asking price: up to $5.25 (1.1%) saved, mostly in fees.
+"Order manager: it waits at Derive's fair price for up to an hour, up to $5.25 (1.1%)
+saved, mostly in fees. If no one sells by then, it buys at the asking price, still under
+your ceiling. It trades from a wallet of its own, funded by one $502 card."
 
-If no one sells to it by then, it buys at the asking price, as long as that is still
-under your ceiling.
-
-It trades from a wallet of its own: approve one $502 card and it needs no more
-approvals. What it doesn't spend waits there until you ask me to bring it home.
-
-Or I can buy it now. Either way, you can lose the whole $499.74 - yes?"
-
-Filed: "It's set up. Approve the $502 funding card and it starts; you'll hear when it
-fills, or in an hour with what it paid."
+Filed: "It's set up. Approve the $502 funding card and it starts, with no more approvals
+after that. What it buys is held in its own wallet's Derive account, and what it doesn't
+spend waits there until you ask me to bring it home. You'll hear when it fills, or in an
+hour with what it paid."
 
 Stopped: "I've told it to stop. It takes its order off the book within a minute and
 sends you what filled."

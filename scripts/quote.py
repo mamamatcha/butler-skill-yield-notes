@@ -468,6 +468,12 @@ def check_fees(q, drag):
 #: $11, and the funding card's own bridge fee comes out of what is sent.
 WORKED_MIN_FUND_USD = 12
 
+#: A Derive buy puts the order manager first, recommended, at this premium or more with
+#: the ask this far over Derive's mark or more. Live on 25 Nov 2026 the median ETH and BTC
+#: ask near the money (delta 0.1-0.6) was about 3% over the mark; 29% were over 5%.
+WORK_RECOMMEND_MIN_USD = 1000.0
+WORK_RECOMMEND_OVER_FAIR = 0.05
+
 
 def worked(action, name, inst, size, price, fee, mark, need_usd=0.0, worst=None,
            other=0.0, index=0.0, venue_fee=None):
@@ -869,6 +875,10 @@ def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
     q.update(worked("buy", inst["instrument_name"], inst, size, ask, fee_worst, mark,
                     worst * size + fee_worst, worst=worst, other=num(t.get("b")), index=spot,
                     venue_fee=venue_fee))
+    if "worked" in q:  # big, and well over fair value: waiting is worth recommending
+        over = ask / mark - 1 if mark > 0 else 0.0
+        q["worked"]["ask_over_fair_pct"] = rnd(over * 100, 1)
+        q["worked"]["recommended"] = gross >= WORK_RECOMMEND_MIN_USD and over >= WORK_RECOMMEND_OVER_FAIR
 
     if ask_sz < size:
         q["warnings"].append(

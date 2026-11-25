@@ -6,7 +6,9 @@ book at the owner's own price per contract until it fills, they cancel it, or th
 option expires. Rysk has no book, so it has none.
 
 It is the owner's choice, never Butler's: offer it only when they ask to wait for a
-price ("sell it at $41 or better", "leave a limit order", "only if it gets to $80").
+price ("sell it at $41 or better", "leave a limit order", "only if it gets to $80"), or in
+the order book's line of a Derive buy's three ways (`buying.md` beat 5). The price is
+always theirs: picked, ask for it.
 
 ## Two kinds
 

@@ -116,7 +116,7 @@ class PlatformFeeTest(unittest.TestCase):
             "fund_usdc": 55, "at_mark_saves_usd": 1.0,
             # $1 to the mark, plus the $1.10 taker fee less the $0.20 maker fee
             "saves_up_to_usd": 1.9, "saves_up_to_pct": 3.8, "price_saves_usd": 1.0,
-            "fee_saves_usd": 0.9})
+            "fee_saves_usd": 0.9, "ask_over_fair_pct": 2.0, "recommended": False})
         back, _ = self.quote({"platformFeeRate": 0}, *CLOSE[1:])
         self.assertEqual((back["worked"]["params"]["ACTION"], back["worked"]["params"]["WORST_PRICE"],
                           back["worked"]["fund_usdc"], back["worked"]["at_mark_saves_usd"]),
@@ -193,6 +193,16 @@ class WorkedSavingTest(unittest.TestCase):
         w = self.quote(TICKER, *CLOSE[1:])["worked"]
         self.assertEqual((w["fee_saves_usd"], w["price_saves_usd"], w["saves_up_to_usd"]), (0, 1.0, 1.0))
         self.assertNotIn("FILL_NOW_PRICE", w["params"])
+
+    def test_a_big_buy_well_over_fair_value_recommends_the_order_manager(self):
+        w = self.quote(dict(TICKER, a="52"), *self.BUY, "--size", "20")["worked"]  # $1,040, 6.1% over
+        self.assertEqual((w["recommended"], w["ask_over_fair_pct"]), (True, 6.1))
+
+    def test_a_small_buy_or_one_near_fair_value_does_not(self):
+        near = self.quote(TICKER, *self.BUY, "--size", "25")["worked"]  # $1,250, 2% over
+        self.assertEqual((near["recommended"], near["ask_over_fair_pct"]), (False, 2.0))
+        small = self.quote(dict(TICKER, a="52"), *self.BUY, "--size", "1")["worked"]  # $52, 6.1% over
+        self.assertFalse(small["recommended"])
 
     def test_paradex_is_never_worked(self):
         h = helper(account({"platformFeeRate": 0})[0])

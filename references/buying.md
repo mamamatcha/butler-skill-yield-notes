@@ -60,7 +60,7 @@ Every number is a **field on the buy quote**. Never compute one.
 | the date | `expiry`, its time as given, never one from memory |
 | how much | `size`, in units of the asset |
 | how good the price is | `overpay_vs_fair_vol_pts` |
-| a wide book, or one that holds less than the size | each of `warnings`, then `rfq_offer` when the quote has it, as written, before the closing question |
+| a wide book, or one that holds less than the size | each of `warnings`, then `rfq_offer` when the quote has it, as written, before the closing question. On Derive, RFQ is already one of beat 5's ways: the warning, never `rfq_offer` |
 
 ## The shape
 
@@ -76,9 +76,19 @@ Four beats, in this order, and on Derive a fifth before the yes:
    $2,664, and each day ETH stands still it is worth a little less."
 4. **The date.** "It settles on 30 October at <`expiry`'s time>; you can sell it back
    before then."
-5. **How it is bought (Derive, a quote with `worked`).** The order manager, offered by
-   default with what it could save in dollars and percent, and buying now as the other
-   choice: `order-manager.md` § Say to the owner. Filed only as `order-manager.md` says.
+5. **How it is bought (Derive, a quote with `worked`): three ways, the pick theirs.**
+   - **Order book**: now at the asking price, inside the ceiling, or a limit order at a
+     price they name (`resting.md`).
+   - **RFQ**: the market makers quote inside the ceiling (`rfq.md`). At `min_size`, say
+     they may not quote one that small.
+   - **Order manager**: it waits at Derive's fair price, with what it could save
+     (`order-manager.md`).
+
+   In that order, unless `worked.recommended` is true: then the order manager goes
+   first, as the one Butler suggests, with why in one sentence (the ask is
+   `worked.ask_over_fair_pct` over Derive's fair price, on a big order). Never suggest it
+   otherwise. A yes with no pick takes the first one listed; say which as it is filed.
+   § Say to the owner has both.
 
 For a put, the same with "below": "If ETH is below $2,350 on 30 October, the put pays
 $3.45 for every dollar below that; it only beats its cost below about $2,295."
@@ -122,7 +132,8 @@ The ask over Derive's own mark is what the buyer gives away crossing the spread.
   (`references/helper.md` § Safeguards).
 
 Either one, or a best ask that holds less than the size, puts `rfq_offer` on the quote:
-end the offer with it, as written (`references/helper.md`).
+end the offer with it, as written (`references/helper.md`). On Derive, beat 5 already
+offers RFQ: say the warning, not `rfq_offer`.
 
 ## A hedge
 
@@ -175,15 +186,42 @@ A bought option pays cash and buys nothing, so it is never `options-put-delivery
 
 ## Say to the owner
 
-On Derive, beat 5 follows before the yes (`order-manager.md` § Say to the owner).
-
 "This is a bet, not yield. 2.95 ETH calls at $2,600: about $190.03 at today's price
 ($189.38 premium plus $0.65 in fees). The order allows 5% for the price moving before
 it fills, so you pay at most **$199.54**; you can set a different ceiling. If ETH is not
 above about $2,664 on 30 October you lose all of it, and it is worth a little less each
 day ETH stands still. You can lose the whole $199.54 - yes?"
 
-A quote with a warning and `rfq_offer`, the first-time check included: both are said
+On Derive, beat 5 comes before that question, and the question asks for the pick too.
+Short paragraphs, the question on its own line:
+
+"Three ways to buy it on Derive:
+
+1. Order book: buy now at the asking price, or leave a limit order at a price you name.
+2. RFQ: I ask the market makers for a better price. They get 20 seconds, and if none
+   quotes inside your $199.54, nothing is bought.
+3. Order manager: it waits at Derive's fair price for up to an hour, up to $2.10 (1.1%)
+   saved, mostly in fees. If no one sells by then, it buys at the asking price, still
+   under your ceiling. It trades from a wallet of its own, funded by one $202 card.
+
+Which one? Whichever you pick, you can lose the whole $199.54 - yes?"
+
+With `worked.recommended` (a $2,400 buy, the ask 6.1% over fair value):
+
+"Three ways to buy it on Derive. I'd suggest the order manager here: the asking price
+is 6.1% over Derive's fair price, and on $2,400 waiting for a better one can save real
+money.
+
+1. Order manager: it waits at Derive's fair price for up to an hour, up to $150 (6.3%)
+   saved. If no one sells by then, it buys at the asking price, still under your
+   ceiling. It trades from a wallet of its own, funded by one $2,522 card.
+2. Order book: buy now at the asking price, or leave a limit order at a price you name.
+3. RFQ: I ask the market makers for a better price. They get 20 seconds, and if none
+   quotes inside your $2,520, nothing is bought.
+
+Which one? Whichever you pick, you can lose the whole $2,520 - yes?"
+
+On Paradex, a quote with a warning and `rfq_offer`, the first-time check included: both are said
 before the questions, never dropped for them. "… The best ask is only 25 contracts and
 this buy is 40, so it may fill part-way. I can also ask the market makers for a price
 instead of taking the order book (RFQ): they get 20 seconds to quote inside your limit,
