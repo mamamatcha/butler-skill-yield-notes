@@ -200,6 +200,8 @@ class AutoRollPreset(unittest.TestCase):
             (own + ("--param", "UNDERLYING=ETH"), "needs --end-at and --max-loss"),
             (own + ("--param", "UNDERLYING=ETH", "--end-at", day), "needs --end-at and --max-loss"),
             (own + limits, "UNDERLYING"),
+            (own + limits + ("--param", "UNDERLYING=NVDA"), "ETH or BTC"),
+            (own + limits + ("--param", "UNDERLYING=SOL"), "ETH or BTC"),
             (own + ("--param", "UNDERLYING=ETH", "--end-at", day, "--max-loss", "6000"), "--max-loss"),
             (own + ("--param", "UNDERLYING=ETH", "--end-at", "2020-01-01", "--max-loss", "500"), "already passed"),
             (own + ("--param", "UNDERLYING=ETH", "--end-at", "23 Feb", "--max-loss", "500"), "YYYY-MM-DD"),
@@ -210,6 +212,12 @@ class AutoRollPreset(unittest.TestCase):
             self.assertEqual((code, why in err), (2, True), (args, err))
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             self.run_it(*own, *limits, "--param", "UNDERLYING=ETH", "--rule", "x.py")
+
+    def test_btc_in_any_case_is_built(self):
+        day, _ = later(90)
+        code, out, err = self.run_it("--wallet", "own", "--wallet-label", "w", "--end-at", day,
+                                     "--max-loss", "500", "--param", "UNDERLYING=btc")
+        self.assertEqual(code, 0, err)
 
     def test_its_trades_run_to_the_end_date_when_times_is_left_out(self):
         day, _ = later(90)

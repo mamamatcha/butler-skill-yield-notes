@@ -1,8 +1,8 @@
 ---
 name: options-trading
 description: Trade options on Derive, Paradex or Rysk - earn on idle USDC by selling cash-secured puts, buy a call or a put, close before expiry, and check or withdraw USDC and positions.
-version: 2.18.1
-metadata: {"butler":{"moneyMoving":true,"keywords":["yield","earn on my usdc","make my money work","idle cash","options income","cash secured put","sell options","sell a put","premium","get paid to wait","buy the dip","yield note","options","buy a call","buy a put","call option","put option","hedge","protect my eth","upside","bet on eth","close my option","sell my option back","buy back my put","close my note","exit my put","get my collateral back","withdraw","withdraw my usdc","derive","my options","options account","options positions","free usdc","derive positions","my option positions","withdraw from derive","withdraw my free usdc","paradex","paradex options","paradex positions","rysk","rysk options","rysk positions","physically settled","hyperevm","limit order","resting order","at my price","or better","leave it on the book","cancel my order","options duty","automate options","options strategy","better price","work the order","auto-roll","auto roll","roll my puts","sell a put every week"],"requires":{"bins":["python3","bevo-read","acp","bevo-wallet"]}}}
+version: 2.18.3
+metadata: {"butler":{"moneyMoving":true,"keywords":["yield","earn on my usdc","make my money work","idle cash","options income","cash secured put","sell options","sell a put","premium","get paid to wait","buy the dip","yield note","options","buy a call","buy a put","call option","put option","hedge","protect my eth","upside","bet on eth","close my option","sell my option back","buy back my put","close my note","exit my put","get my collateral back","withdraw","withdraw my usdc","derive","my options","options account","options positions","free usdc","derive positions","my option positions","withdraw from derive","withdraw my free usdc","paradex","paradex options","paradex positions","rysk","rysk options","rysk positions","physically settled","hyperevm","limit order","resting order","at my price","or better","leave it on the book","cancel my order","options duty","automate options","options strategy","better price","work the order","auto-roll","auto roll","roll my puts","sell a put every week","steady yield","steady income","passive income","regular income"],"requires":{"bins":["python3","bevo-read","acp","bevo-wallet"]}}}
 ---
 
 ## When to use
@@ -12,6 +12,8 @@ Your owner wants Derive, Paradex or Rysk options:
 - **Earn** - "earn on my USDC", "get paid to buy the dip": **sell** one cash-secured
   put, fully collateralised in USDC. They keep the premium and may end up buying the
   asset at the strike (`selling.md`).
+- **Steady income** - "steady yield", "every week", what you recommend for earning:
+  pitch **auto-roll** first, before any one put (`duty.md` § Auto-roll).
 - **Buy** - "buy an ETH call", "hedge my ETH with a put": **buy** one call or put.
   Not yield: they pay up front and can lose all of it (`buying.md`).
 - **Close** - before expiry: "sell my call back" **sells back** an option they
@@ -210,7 +212,7 @@ failed: re-read the account and wait. Look up `:home` with `--route trade`.
 - Selling locks collateral until expiry or a buy-back; buying is paid in full. Rolling: fresh
   yes or auto-roll.
 - **Cash settled** on Derive and Paradex, kept there till withdrawn; Rysk delivers the asset.
-- Not advice: never rank or recommend a trade.
+- Not advice: never rank or recommend a trade. Auto-roll is offered; the coin is theirs.
 
 ## Say to the owner
 
