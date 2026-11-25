@@ -202,7 +202,8 @@ Short paragraphs, the question on its own line:
    quotes inside your $199.54, nothing is bought.
 3. Order manager: it waits at Derive's fair price for up to an hour, up to $2.10 (1.1%)
    saved, mostly in fees. If no one sells by then, it buys at the asking price, still
-   under your ceiling. It trades from a wallet of its own, funded by one $202 card.
+   under your ceiling. It trades from a wallet of its own, funded by one $202 card;
+   what it doesn't spend comes back to you.
 
 Which one? Whichever you pick, you can lose the whole $199.54 - yes?"
 
@@ -214,7 +215,8 @@ money.
 
 1. Order manager: it waits at Derive's fair price for up to an hour, up to $150 (6.3%)
    saved. If no one sells by then, it buys at the asking price, still under your
-   ceiling. It trades from a wallet of its own, funded by one $2,522 card.
+   ceiling. It trades from a wallet of its own, funded by one $2,522 card; what it
+   doesn't spend comes back to you.
 2. Order book: buy now at the asking price, or leave a limit order at a price you name.
 3. RFQ: I ask the market makers for a better price. They get 20 seconds, and if none
    quotes inside your $2,520, nothing is bought.

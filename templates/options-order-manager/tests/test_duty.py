@@ -46,7 +46,7 @@ class Venue:
 
     def __init__(self, instrument=PUT, free=10000.0, position=0.0, book=None, makers=None,
                  hits=None, refuse=None, unknown=(), orders_unread=False, cash=0.0,
-                 fee_rate=0.5, rfq_seconds=25):
+                 fee_rate=0.5, rfq_seconds=25, label="om-eth-put"):
         self.instrument = instrument
         self.free = free
         self.position = position
@@ -66,6 +66,11 @@ class Venue:
         #: of `params()`, its FEE_USD.
         self.fee_rate = fee_rate
         self.rfq_seconds = rfq_seconds
+        #: The duty's own wallet: its label, Derive withdrawals on their way to it as
+        #: [(lands at, dollars)], and what it has sent to the owner's main wallet.
+        self.label = label
+        self.landing = []
+        self.sent_home = []
         self.orders = {}
         self.ledger = {}
         self.commands = []
@@ -97,6 +102,8 @@ class Venue:
     def tick(self, now):
         """Takers reach our resting orders up to `now`."""
         self.now = now
+        self.cash += sum(usd for t, usd in self.landing if t <= now)
+        self.landing = [(t, usd) for t, usd in self.landing if t > now]
         due = [h for h in self.hits if h[0] <= now]
         self.hits = [h for h in self.hits if h[0] > now]
         for _, size in due:
@@ -136,6 +143,16 @@ class Venue:
             amount = num(argv, "--amount")
             self.cash -= amount
             self.free += amount
+            self.ledger[key] = {"state": "executed", "response": {"outcome": {}}}
+            return
+        if verb == "withdraw":
+            amount = num(argv, "--amount")
+            if amount > self.free + 1e-9:
+                self.ledger[key] = {"state": "refused", "response": {
+                    "code": "OPTIONS_WITHDRAW_TOO_MUCH", "error": "only $%.2f is free" % self.free}}
+                return
+            self.free -= amount
+            self.landing.append((self.now + 600, amount - 1))  # Derive keeps about $1
             self.ledger[key] = {"state": "executed", "response": {"outcome": {}}}
             return
         if verb == "cancel":
@@ -178,6 +195,8 @@ class Venue:
             self.ledger[key] = {"state": "refused", "response": {"code": "OPTIONS_NOT_FILLED", "error": said}}
             return
         self.fill(side, size, price)
+        if getattr(self, "free_after_fill", None) is not None:
+            self.free = self.free_after_fill
         self.ledger[key] = {"state": "executed", "response": {"outcome": {
             "trade": {"size": size, "grossUsd": round(price * size, 2), "feeUsd": round(fee, 6)}}}}
 
@@ -259,6 +278,8 @@ class FakeBevo:
         return {"executed": "executed", "refused": "dropped", "unknown": "unknown"}.get(state, "waiting")
 
     def spawned(self, argv, **_kwargs):
+        if argv[0] == "bevo-wallet":
+            return subprocess.CompletedProcess(argv, 0, json.dumps(self.wallet(list(argv[1:]))), "")
         if list(argv[:2]) != ["acp", "options"]:
             raise AssertionError("unexpected command %r" % (argv,))
         args = list(argv[2:])
@@ -266,6 +287,18 @@ class FakeBevo:
         del args[args.index("--idempotency-key"):args.index("--idempotency-key") + 2]
         self.venue.run(args, key)
         return subprocess.CompletedProcess(argv, 0, json.dumps({"status": "queued", "idempotencyKey": key}), "")
+
+    def wallet(self, args):
+        if args[0] == "list":
+            return {"wallets": [{"label": self.venue.label, "balances": [
+                {"symbol": "USDC", "chainId": 1, "amount": self.venue.cash}]}]}
+        if args[0] == "withdraw":
+            assert args[args.index("--wallet") + 1] == self.venue.label
+            amount = num(args, "--amount")
+            self.venue.cash -= amount
+            self.venue.sent_home.append(amount)
+            return {"ok": True}
+        raise AssertionError("unexpected bevo-wallet %r" % (args,))
 
     def ticks(self):
         for at in self.times[1:]:
@@ -369,7 +402,7 @@ class TheExample(unittest.TestCase):
         self.assertEqual(self.fake.venue.position, -2.0)
         self.assertIn("Sold 2 of 2 %s" % PUT, self.fake.finished)
         self.assertIn("Average $51.62 each before fees, $4.62 each better than filling at once ($47.00); "
-                      "about $9.35 better in all, fees included. Filled: 1.5 by a maker's quote, 0.5 on its "
+                      "about $9.35 (9.9%) better in all, fees included. Filled: 1.5 by a maker's quote, 0.5 on its "
                       "resting order.",
                       self.fake.finished)
 
@@ -393,7 +426,7 @@ class Receipt(unittest.TestCase):
                    "SIZE": 0.1, "WORST_PRICE": 6.0, "FEE_USD": 0.56, "WORK_MINUTES": 20, "STEP_MINUTES": 5,
                    "MIN_SIZE": 0.01, "FILL_NOW_PRICE": 6.0}, state=fake.state)
         self.assertIn("Bought 0.1 of 0.1 ETH-20261204-1300-P. Average about $5.60 each before fees, "
-                      "$0.40 each better than filling at once ($6.00); about $0.05 better in all, fees "
+                      "$0.40 each better than filling at once ($6.00); about $0.05 (8.3%) better in all, fees "
                       "included. Filled: 0.1 by a maker's quote.", fake.finished)
 
     def test_a_resting_fill_is_priced_at_its_own_limit(self):
@@ -670,6 +703,91 @@ class Deadline(unittest.TestCase):
         venue = Venue()
         fake = run([start + i * 60 for i in range(125)], venue, {"WORK_MINUTES": 600})
         self.assertAlmostEqual(fake.state["deadline"], expiry - 3600, delta=60)
+
+
+class DeadlineTakesTheBetterOfTheMakersAndTheBook(unittest.TestCase):
+    # A worked buy's WORST_PRICE is the ordinary buy's ceiling, over today's ask; at the
+    # deadline that room is a bound, not a price: a maker fills only under the book, and the
+    # book fills at its own ask.
+    SETTINGS = {"INSTRUMENT": CALL, "ACTION": "buy", "SIZE": 1, "WORST_PRICE": 58, "FEE_USD": 1.0,
+                "FILL_NOW_PRICE": 55, "WORK_MINUTES": 30, "STEP_MINUTES": 10}
+
+    def test_the_book_fills_at_its_ask_not_the_ceiling(self):
+        venue = Venue(instrument=CALL, book=[(0, book(ask=55.0))])
+        fake = run(minutes(35), venue, self.SETTINGS)
+        late = [(m, a) for m, a in fake.placed() if m >= 31]
+        rfq = [a for _, a in late if a[-1] == "rfq"]
+        self.assertAlmostEqual(per_contract(rfq[0]), 55.0 + 1.0)  # the book's ask, fee included
+        self.assertIn("Bought 1 of 1 %s. Average $55.00 each" % CALL, fake.finished)
+
+    def test_a_maker_under_the_book_is_taken_first(self):
+        venue = Venue(instrument=CALL, book=[(0, book(ask=55.0))], makers=[(at(31), 54.0)])
+        fake = run(minutes(35), venue, self.SETTINGS)
+        self.assertIn("Average $54.00 each", fake.finished)
+        self.assertIn("by a maker's quote", fake.finished)
+
+
+class LongRuns(unittest.TestCase):
+    def test_work_minutes_has_no_upper_limit(self):
+        recipe = json.loads((ROOT / "recipe.json").read_text())
+        self.assertNotIn("maximum", recipe["params"]["properties"]["WORK_MINUTES"])
+
+    def test_ten_days_is_ten_days(self):
+        fake = run(minutes(3), Venue(), {"WORK_MINUTES": 14400})
+        self.assertEqual(fake.fails, [])
+        self.assertAlmostEqual(fake.state["deadline"] - fake.state["started"], 14400 * 60)
+
+
+HOME = {"INSTRUMENT": CALL, "ACTION": "buy", "SIZE": 1, "WORST_PRICE": 58, "FEE_USD": 1.0,
+        "FILL_NOW_PRICE": 55, "WITHDRAW_ON_FINISH": True, "WALLET_LABEL": "om-eth-put"}
+
+
+class SendsWhatItDidNotUseHome(unittest.TestCase):
+    def test_after_the_receipt_its_free_usdc_goes_off_derive_and_home(self):
+        venue = Venue(instrument=CALL, free=120.0, makers=[(0, 52.0)])
+        fake = run(minutes(15), venue, HOME)
+        receipt = [n for n in fake.notes if "Bought 1 of 1" in n]
+        self.assertEqual(len(receipt), 1)
+        self.assertIn("Next it sends what it did not use back", receipt[0])
+        self.assertEqual([a[:3] for _, a in fake.placed("withdraw")], [["withdraw", "--amount", "119.99"]])
+        self.assertEqual(venue.sent_home, [118.99])
+        self.assertEqual(fake.finished, "ETH put order: $118.99 went back to your main wallet.")
+
+    def test_nothing_filled_sends_it_all_home(self):
+        venue = Venue(instrument=CALL, free=60.0, book=[(0, book(ask=60.0))])
+        fake = run(minutes(50), venue, dict(HOME, WORK_MINUTES=30, STEP_MINUTES=10))
+        self.assertIn("nothing filled", "".join(fake.notes))
+        self.assertEqual(venue.sent_home, [58.99])
+        self.assertIn("$58.99 went back", fake.finished)
+
+    def test_under_the_withdrawal_fee_stays_and_it_finishes(self):
+        venue = Venue(instrument=CALL, free=59.5, makers=[(0, 52.0)])
+        venue.free_after_fill = 2.5
+        fake = run(minutes(4), venue, HOME)
+        self.assertEqual(fake.placed("withdraw"), [])
+        self.assertIn("nothing to send home", fake.finished)
+
+    def test_a_refused_withdrawal_tries_again(self):
+        venue = Venue(instrument=CALL, free=120.0, makers=[(0, 52.0)], refuse={"withdraw": "OPTIONS_BUSY"})
+        first = run(minutes(3), venue, HOME)
+        self.assertEqual(len(first.placed("withdraw")), 1)
+        del venue.refuse["withdraw"]
+        fake = run([at(m) for m in range(4, 25)], venue, HOME, state=first.state)
+        tries = fake.placed("withdraw")
+        self.assertEqual(len(tries), 2)
+        self.assertGreaterEqual(tries[1][0] - tries[0][0], 5)
+        self.assertIn("went back to your main wallet", fake.finished)
+
+    def test_without_its_wallet_label_it_does_nothing(self):
+        fake = run(minutes(2), Venue(), {"WITHDRAW_ON_FINISH": True})
+        self.assertEqual(fake.placed(), [])
+        self.assertTrue(fake.fails[0].startswith("settings: WITHDRAW_ON_FINISH needs WALLET_LABEL"))
+
+    def test_without_withdraw_on_finish_it_finishes_with_the_receipt(self):
+        venue = Venue(instrument=CALL, free=120.0, makers=[(0, 52.0)])
+        fake = run(minutes(3), venue, dict(HOME, WITHDRAW_ON_FINISH=False))
+        self.assertEqual(fake.placed("withdraw"), [])
+        self.assertTrue(fake.finished.startswith("ETH put order: Bought 1 of 1"))
 
 
 class Funding(unittest.TestCase):

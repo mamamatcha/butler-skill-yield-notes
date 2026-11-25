@@ -1,5 +1,20 @@
 # Changelog
 
+## 2
+
+- **What it did not use comes home.** `WITHDRAW_ON_FINISH` (with `WALLET_LABEL`, the
+  label its wallet was created with): after the receipt it withdraws its free USDC from
+  Derive into its own wallet, waits for it to land on Ethereum (24 hours at most), and
+  sends it to the owner's main wallet with `bevo-wallet withdraw --amount`, no card, as
+  `scripts/duty_program.py`'s `WITHDRAW_ON_FINISH` does. Under $3 free stays: Derive keeps
+  about $1 a withdrawal. A refused withdrawal tries again 5 minutes later, 0.5% smaller
+  for each "only $N is free". What backs a position, a sold put's collateral, stays.
+  Without the setting it finishes with the receipt, as before.
+- **No longest run.** `WORK_MINUTES` had a maximum of 1,440; it has none now. It still
+  finishes an hour before expiry.
+- **The receipt says the saving in percent too**, of what filling at once would have
+  paid or got before fees: "about $9.35 (9.9%) better in all, fees included".
+
 ## 1
 
 - **First version.** Works one Derive order (open, buy or close) from the duty's own
