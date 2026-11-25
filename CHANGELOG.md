@@ -19,8 +19,11 @@
   of prose. SKILL.md § Say to the owner now says: short bullets, a few words each, the
   question on its own line, every figure kept. `buying.md` § The shape is a bullet
   template (headline; cost and ceiling; fees; pays and breakeven; settles; warnings; the
-  three ways; one question for the route and the yes to the number), and the examples
-  in `buying.md`, `order-manager.md`, `rfq.md` and `resting.md` are bullets. A Derive buy
+  three ways; one question for the route and the yes to the number), and so is
+  `selling.md` § The shape (the bad case still first, the ownership question on its own
+  line). The examples are bullets: buy and sell back (`buying.md`), sell and buy back
+  (`selling.md`), the account check and withdrawals (`account.md`), `order-manager.md`,
+  `rfq.md` and `resting.md`; a check lists each position's `summary` as a bullet. A Derive buy
   says the order manager's wallet and card when it is filed, not in the offer. "Not
   yield" is said only to someone who asked for yield; the time-decay line is left to the
   first-time check.

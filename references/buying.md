@@ -152,14 +152,22 @@ more than the position ("sell 5 of my ETH calls" with 0.16 held), say so and ask
 "You hold 0.16 of that call, not 5. Sell all 0.16?" Never shrink the size quietly,
 and never pick between two positions for them.
 
-Quote the close with `quote --side close --instrument <name> --size <size>`. Say
-`net_proceeds_usd` against what they paid (the position's `costUsd`), plainly
-when it is less: "Selling back now gets about $178.73 after fees, against $190.03 you
-paid." Give any `warnings` as written ("fees take 16% of what the bid pays").
+Quote the close with `quote --side close --instrument <name> --size <size>`. Say, as
+bullets, `net_proceeds_usd` against what they paid (the position's `costUsd`), plainly
+when it is less, and any `warnings` as written. **Then ask for the floor**, the least
+they will take, with `min_proceeds_usd` as the suggestion:
 
-**Then ask for the floor**, the least they will take, with `min_proceeds_usd` as the
-suggestion: "The least you'd take? I'd suggest $169.79, so a small move doesn't stop
-it." File only the floor they agreed, and quote again after their answer: the card
+```text
+Sell back the $2,600 ETH call, 2.95 ETH:
+
+- Now: ~$178.73 after fees.
+- You paid $190.03.
+- Fees take 16% of what the bid pays.
+
+The least you'd take? I'd suggest $169.79, so a small move doesn't stop it.
+```
+
+File only the floor they agreed, and quote again after their answer: the card
 needs a quote under 60 seconds old.
 
 If it does not fill, nobody bought at that floor; the price moved. Say exactly that,
