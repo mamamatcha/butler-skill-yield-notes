@@ -55,7 +55,7 @@ inside the ceiling.
    | Field | Means |
    | --- | --- |
    | `worked.params` | the duty's settings, passed as they are. `WORST_PRICE` is the bound per contract: the bid selling; buying, the ceiling an ordinary buy carries (`max_cost_usd`), with `FILL_NOW_PRICE` today's ask for the receipt |
-   | `worked.fund_usdc` | what the duty's wallet starts with: the collateral, or the cost at the ceiling, plus the fee and 2% for the bridge, never under $12 |
+   | `worked.fund_usdc` | what the duty's wallet starts with: the collateral, or the cost at the ceiling, plus the fee and 2% (at most $2) for the bridge, never under $12 |
    | `worked.saves_up_to_usd`, `worked.saves_up_to_pct` | the most working it could save, price and fee (§ The saving) |
 
    No `worked`: the quote is not Derive's, or has no live price; it cannot be worked.
@@ -65,9 +65,10 @@ inside the ceiling.
    `max_cost_usd`. A lower ceiling of their own: set `WORST_PRICE` to `FILL_NOW_PRICE`
    (today's price), which stays inside it. Get a yes.
 3. **Money left from an earlier one.** Before a new wallet, `duty_list`: each finished
-   `options-order-manager@1` duty names its `walletId`. `acp options account --venue
-   derive --wallet <LABEL>` on each: free USDC there is said once ("$486 is still in the
-   wallet from your last order") with the offer to bring it home, never left unsaid.
+   `options-order-manager@1` duty names its `walletId`. `bevo-read get
+   '/options/account?venue=derive&walletId=<LABEL>'` on each: free USDC there
+   (`freeForNewPutsUsd`) is said once ("$486 is still in the wallet from your last
+   order") with the offer to bring it home, never left unsaid.
 4. A new wallet for it, then the duty:
 
    ```sh
@@ -96,25 +97,24 @@ do. A setting the recipe refuses is said as refused, never as done.
 
 ## Stopping it
 
-**Never turn it off to stop it.** Only the running duty can cancel an order resting
-from its wallet; the chat cannot, and `acp options cancel` with `--wallet` is refused.
-Turned off while an order rests, that order stays on Derive and can still fill at its
-price until the option expires.
+**Never turn it off to stop it.** Turned off while an order rests, that order stays on
+Derive and can still fill at its price until the option expires.
 
 "Cancel it", "stop working it": `duty_update` its params with `"STOP": true` added,
 every other setting unchanged. Within a minute it cancels what rests and sends the
-receipt for what had filled. Found turned off: `duty_status` on, then the same update;
-if only the owner can resume it, ask them to, and say why.
+receipt for what had filled. Found turned off with an order still resting: cancel it from
+chat, `acp options cancel --order <id> --wallet <LABEL>`, a card (`--wallet` left out in
+the duty's own chat).
 
 ## Afterwards
 
-- **Look:** `acp options account --venue derive --wallet <LABEL>`.
+- **Look:** `bevo-read get '/options/account?venue=derive&walletId=<LABEL>'`.
 - **Close what it holds:** quote the close (step 2); to work it, `duty_update` the same
   duty with that quote's `worked.params` (a new order; a close is worked by the makers
   and the book only). To close now: step 5's `acp options close … --wallet <LABEL>`, a card.
-- **Bring the money home:** `acp options withdraw --amount <USDC> --wallet <LABEL>`, as
-  step 8. After the receipt, offer it for what was not spent. `duty_delete` is refused
-  while that account holds money, an order or a position.
+- **Bring the money home:** `account.md` § A duty's own wallet: out of Derive into this
+  wallet, then into the main wallet, a card each. After the receipt, offer it for what
+  was not spent. `duty_delete` is refused until then.
 - At expiry Derive settles in cash into that same account; the lifecycle duty gives
   the heads-up and the outcome, naming this wallet.
 
@@ -128,12 +128,12 @@ hour instead of paying the asking price: up to $5.25 (1.1%) saved, mostly in fee
 If no one sells to it by then, it buys at the asking price, as long as that is still
 under your ceiling.
 
-It trades from a wallet of its own: approve one $510 card and it needs no more
+It trades from a wallet of its own: approve one $502 card and it needs no more
 approvals. What it doesn't spend waits there until you ask me to bring it home.
 
 Or I can buy it now. Either way, you can lose the whole $499.74 - yes?"
 
-Filed: "It's set up. Approve the $510 funding card and it starts; you'll hear when it
+Filed: "It's set up. Approve the $502 funding card and it starts; you'll hear when it
 fills, or in an hour with what it paid."
 
 Stopped: "I've told it to stop. It takes its order off the book within a minute and

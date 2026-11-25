@@ -1,8 +1,8 @@
 ---
 name: options-trading
 description: Trade options on Derive, Paradex or Rysk - earn on idle USDC by selling cash-secured puts, buy a call or a put, close before expiry, and check or withdraw USDC and positions.
-version: 2.17.3
-metadata: {"butler":{"moneyMoving":true,"keywords":["yield","earn on my usdc","make my money work","idle cash","options income","cash secured put","sell options","sell a put","premium","get paid to wait","buy the dip","yield note","options","buy a call","buy a put","call option","put option","hedge","protect my eth","upside","bet on eth","close my option","sell my option back","buy back my put","close my note","exit my put","get my collateral back","withdraw","withdraw my usdc","derive","my options","options account","options positions","free usdc","derive positions","my option positions","withdraw from derive","withdraw my free usdc","paradex","paradex options","paradex positions","rysk","rysk options","rysk positions","physically settled","hyperevm","limit order","resting order","at my price","or better","leave it on the book","cancel my order","options duty","automate options","options strategy","better price","work the order"],"requires":{"bins":["python3","bevo-read","acp","bevo-wallet"]}}}
+version: 2.18.2
+metadata: {"butler":{"moneyMoving":true,"keywords":["yield","earn on my usdc","make my money work","idle cash","options income","cash secured put","sell options","sell a put","premium","get paid to wait","buy the dip","yield note","options","buy a call","buy a put","call option","put option","hedge","protect my eth","upside","bet on eth","close my option","sell my option back","buy back my put","close my note","exit my put","get my collateral back","withdraw","withdraw my usdc","derive","my options","options account","options positions","free usdc","derive positions","my option positions","withdraw from derive","withdraw my free usdc","paradex","paradex options","paradex positions","rysk","rysk options","rysk positions","physically settled","hyperevm","limit order","resting order","at my price","or better","leave it on the book","cancel my order","options duty","automate options","options strategy","better price","work the order","auto-roll","auto roll","roll my puts","sell a put every week"],"requires":{"bins":["python3","bevo-read","acp","bevo-wallet"]}}}
 ---
 
 ## When to use
@@ -22,6 +22,9 @@ Your owner wants Derive, Paradex or Rysk options:
 - **Look or withdraw** - "my free USDC in Derive" (`freeForNewPutsUsd`, not wallet
   cash), "my positions": steps 1 and 9, then stop. "Withdraw my free USDC": step 8, never an
   `acp trade` (`account.md`). Listing: `listing.md`.
+- **Deposit, no trade** - "deposit $20 into Derive", $11+: first command is step 4's for
+  their amount, before any read, reference or skill (the server checks). Then steps 1, 9.
+  Funding a trade: step 4 only.
 
 Not this skill: covered calls, spreads or leverage.
 
@@ -73,20 +76,11 @@ this chat. One missing: ask, and file nothing this turn.
    `account.md`. An unreadable account is not an empty one.
 
    **Then, every time a venue shows `exists: true`, call the `duty_list` tool and do
-   step 9 before you answer, whatever was asked.** Without it nobody tells the owner
-   when an option expires.
+   step 9 before you answer, whatever was asked.**
 
 2. [FIXED] Run the helper in place; never write, copy or edit a script, or trim its
-   output. Missing: say so, and stop. Quote with the line for the intent
-   (`helper.md`); the strike is a rule or theirs:
-
-   ```sh
-   python3 ~/skills/options-trading/scripts/quote.py screen --collateral <USD>
-   python3 ~/skills/options-trading/scripts/quote.py quote --product cash_secured_put --underlying <ASSET> --collateral <USD> [--expiry <DAY>] [--strike <N>]
-   python3 ~/skills/options-trading/scripts/quote.py quote --side buy --product <PRODUCT> --underlying <ASSET> --budget <USD> [--expiry <DAY>] [--strike <N>]
-   python3 ~/skills/options-trading/scripts/quote.py quote --side close --instrument <INSTRUMENT> --size <SIZE>
-   python3 ~/skills/options-trading/scripts/quote.py quote --side buyback --instrument <INSTRUMENT> --size <SIZE> --premium-received <USD>
-   ```
+   output. Missing: say so, and stop. Quote with the line for the intent, from
+   `helper.md` § The lines (read it first); the strike is a rule or theirs.
 
    Selling: the asset they named, or screen (never an APR menu) and ask. **No amount
    from them:** each venue's `minimum` (`which-venue.md`), then ask it; no quote,
@@ -112,19 +106,19 @@ this chat. One missing: ask, and file nothing this turn.
      or lost); it frees `frees`. Ask the ceiling (`max_cost_usd`
      suggested). Waiting costs nothing: say so when `result_usd` is negative.
 
-4. [FIXED] With all four met, fund a sell or a buy only when `freeForNewPutsUsd` is below
-   `collateral.amount` (sell) or `max_cost_usd` (buy). Deposit the shortfall plus 2% for
-   the bridge, rounded up, and **never under $11**. Refused: file the `at least $N` it
-   names, once. Say what arrives from the card alone:
+4. [FIXED] With all four met, fund only when `freeForNewPutsUsd` is under
+   `collateral.amount` or `max_cost_usd`: the shortfall + 2% (≤$2), rounded up,
+   **never under $11**. Refused: file the `at least $N` it names, once. Wallet short:
+   **file no deposit**; ask once for it less wallet stablecoins (`venue.md`).
+   Say what arrives from the card alone:
 
    ```sh
    acp options deposit --amount <DEPOSIT_USDC> --idempotency-key <KEY>:deposit
    ```
 
-   It gathers stablecoins from **every chain**. `--from 1` only when `ethereum.usdc`
-   covers it alone. Never ask about gas or an address. Re-read the account until free USDC covers it, and do step 9; if
-   short, re-quote smaller and re-offer. Free USDC spans their Derive accounts
-   (`account.md`).
+   It gathers stablecoins from **every chain**. Never ask about
+   gas or an address. Re-read the account until free USDC covers it; if short, re-quote
+   smaller and re-offer.
 
 5. [FIXED] Run the quote again now, after their last answer. With all four met, file
    the command, with that quote's fields and the bound they agreed:
@@ -139,8 +133,7 @@ this chat. One missing: ask, and file nothing this turn.
    One bound per close. The reply is an approval card, not a fill: tell the owner to
    approve it in the app. At their price: `resting.md`; by RFQ: `rfq.md`.
 
-6. [FIXED] Wait for the outcome; never re-run the command for it. The server nudges
-   you when the card lands. Then:
+6. [FIXED] Wait for the outcome; never re-run the command for it. Then:
 
    ```sh
    bevo-read request <KEY>:<OP> --route options
@@ -166,6 +159,14 @@ this chat. One missing: ask, and file nothing this turn.
    acp trade --token-in usdc --chain-in 1 --amount-in <USDC_ARRIVED> --token-out usdc --chain-out 8453 --idempotency-key <KEY>:home
    ```
 
+   A duty's own wallet (`account.md` § A duty's own wallet), never `:home`: the first
+   into its wallet (no `--wallet` in that duty's chat), the second once it has landed:
+
+   ```sh
+   acp options withdraw --amount <USDC> --wallet <LABEL> --idempotency-key <KEY>:withdraw
+   bevo-wallet withdraw --wallet <LABEL> --all --idempotency-key <KEY>:home
+   ```
+
 9. [FIXED] Whenever step 1 shows an account on any venue, unasked, in that same turn
    before you answer: `duty_list`, then `duty_show` each for its `recipe`. Go by
    `recipe` alone, never a title. The owner needs exactly one of each:
@@ -178,9 +179,7 @@ this chat. One missing: ask, and file nothing this turn.
    - Missing, or the list is empty: file it now. Neither takes `params`; one covers
      every option.
    - An older `options-account` or a fork: `duty_update` to this recipe.
-   - `duty_delete` only these: `derive-account`, every `options-lifecycle@11` or older
-     (one per option), and a second `options-lifecycle@12`. Nothing else, and never an
-     `options-put-delivery`.
+   - An older duty of these two, or a second one: `account.md` § Old duties.
 
    `options-account` alone writes Platforms rows; never `bevo-platforms set`.
 
@@ -208,11 +207,11 @@ failed: re-read the account and wait. Look up `:home` with `--route trade`.
 
 ## Limits
 
-- Selling locks collateral until expiry or a buy-back; buying is paid in full. No rolling
-  without a fresh yes.
+- Selling locks collateral until expiry or a buy-back; buying is paid in full. Rolling: fresh
+  yes or auto-roll.
 - **Cash settled** on Derive and Paradex, kept there till withdrawn; Rysk delivers the asset.
 - Not advice: never rank or recommend a trade.
 
 ## Say to the owner
 
-Worked sentences end each reference.
+In each reference.

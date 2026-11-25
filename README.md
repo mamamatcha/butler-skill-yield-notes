@@ -6,7 +6,7 @@ selling cash-secured puts, buying calls and puts, and closing them on **Derive**
 people maintaining the repo. A butler receives `SKILL.md`, `references/**/*.md` and
 `scripts/**/*.py`; the registry also serves the duty templates under `templates/`.
 
-- **Version:** 2.17.3 (`SKILL.md`), with `options-lifecycle` 12, `options-put-delivery` 1,
+- **Version:** 2.18.2 (`SKILL.md`), with `options-lifecycle` 12, `options-put-delivery` 1,
   `options-account` 6 and `options-order-manager` 1.
   What changed in each release: `CHANGELOG.md`.
 - **Registry name:** `options-trading`, listed in the hub's `skills.json` from this repo.
@@ -60,7 +60,8 @@ carries `--venue paradex` or `--venue rysk`.
 | Withdrawing | `acp options withdraw` | One approval card. A Derive withdrawal also takes an `acp trade` home to Base. |
 | Watching to expiry | the `options-lifecycle@12` duty, `templates/options-lifecycle/` | One per owner, filed unasked once any venue account exists, with nothing to set. Watches every option held, sold or bought, in the main wallet's accounts and in every Butler wallet's own: a heads-up the day before expiry and the outcome once it settles, at the size and cost the account shows. Nothing is filed per trade or deleted after a close. Runs no command, so it is filed with `movesFunds: false` and no pocket. |
 | Owning the asset after an assigned put | the `options-put-delivery@1` duty, `templates/options-put-delivery/` | Filed for a sold Derive or Paradex put, only when the owner asked before the open to end up owning the asset; its instrument goes in the lifecycle duty's `EXCEPT` so only one duty reports on it. Watches that put, then buys the asset with `acp trade` if it is assigned. The only options duty with a pocket. |
-| A duty that trades | the owner's own duty code, `references/duty.md` | Butler's first reply recommends the duty's own wallet (hands-free, one funding card, copyable) or the main wallet (one Start card for the amount set aside, then no card per trade it covers) with a reason, asks how much to set aside in total, and which venue. `scripts/make_duty.py` builds it from `scripts/duty_program.py` and Butler's rule (`trigger()`, `order()`), so the program is never retyped: the money is on the venue before the trigger is watched, never deposited when it fires; it tells the owner when it is ready, when it fires and how each order ended, and when its balance is short of the next trade. |
+| A duty that trades | the owner's own duty code, `references/duty.md` | Butler's first reply recommends the duty's own wallet (hands-free, one funding card, copyable) or the main wallet (one Start card for the amount set aside, then no card per trade it covers) with a reason, asks how much to set aside in total, and which venue. `scripts/make_duty.py` builds it from `scripts/duty_program.py` and Butler's rule (`trigger()`, `order()`), so the program is never retyped: the money is on the venue before the trigger is watched, never deposited when it fires; it tells the owner when it is ready, when it fires and how each order ended, and when its balance is short of the next trade. Built with `--end-at`, `--max-loss` or `--withdraw-on-finish`, it stops trading at that date or loss, or on `STOP`, lets what it holds settle, and sends its USDC on each chain back to the main wallet (`bevo-wallet withdraw --amount`, no card). |
+| Auto-roll | `make_duty.py --preset auto-roll`, `references/duty.md` | A put sold every week from the duty's own wallet whenever nothing is open: the strike nearest spot at least 8% under it with a delta of 0.15 or less (`quote.py --otm-pct 8 --max-delta 0.15`), sized to all its free USDC, cash settled. Ends at its end date, its loss limit or on `STOP`, and sends everything home. |
 | Platforms rows | the `options-account@7` duty, `templates/options-account/` | One per owner, filed unasked once any venue account exists. The only writer of the options rows on the wallet's Platforms tab: one row per venue, and one per Derive subaccount, each at the venue's own worth with its positions and resting orders listed. |
 | Working an order for a better price | the `options-order-manager@1` duty, `templates/options-order-manager/` | Offered by default on every Derive buy, with what it could save in dollars and percent (price and fee); a sale or close only when the owner asks for a better price (`references/order-manager.md`). Filed from a Derive quote's `worked` block; a worked buy carries the ordinary buy's ceiling. Trades one Derive order hands-free from the duty's own wallet, funded by one card: it takes a maker who saves half the gap between the book and Derive's mark, rests post-only at the mark, and gives ground toward the book each step, never past the agreed worst price, then sends a receipt against the fill-now price and finishes; the lifecycle duty watches what it holds. Stopped with its `STOP` setting, never by turning it off: only the running duty can cancel its wallet's resting order. |
 
@@ -114,7 +115,7 @@ These figures come from four live cases (BTC and ZEC on 2026-11-11, NVDA on
 
 ## Measurements
 
-Apart from Derive's $10 minimum deposit and the Base bridge's ~$0.10 (in
+Apart from the $11 minimum deposit and the Base bridge's ~$0.10 (in
 `references/venue.md`), nothing a butler reads states a venue figure: fees, minimums,
 sizes, times and which assets clear come from the quote, the account read, the card or
 its outcome, so they cannot go stale in the skill. What was measured, for the people tuning the warnings, is
@@ -133,7 +134,8 @@ Derive v3 mainnet, 7 October 2026 (selling) and 9 October 2026 (buying):
   $7.40 at the minimum, where the base fee was about 9% of the premium. Paradex: $20 of
   the underlying per order, a 40% price band around the mark, and 5 USDC or 0.001 ETH in
   the wallet to open an account.
-- **Funding:** Derive's minimum deposit $10 and the direct Base bridge's ~$0.10, both also
+- **Funding:** the $11 minimum deposit (Derive keeps one that arrives under $10; the
+  dollar over is for the bridge) and the direct Base bridge's ~$0.10, both also
   kept in `references/venue.md`, where the agent sizes a deposit; an Ethereum deposit credited about 2 minutes after it is mined. A withdrawal took 17
   minutes, less a fee capped at $1; the `:home` trade had a $2 minimum and a fee of
   max($1, 0.5%). Opening a new Derive subaccount cost nothing.

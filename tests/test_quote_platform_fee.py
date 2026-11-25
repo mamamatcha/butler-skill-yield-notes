@@ -187,7 +187,7 @@ class WorkedSavingTest(unittest.TestCase):
             self.assertEqual(p["FILL_NOW_PRICE"], q["ask_price"])
             need = p["WORST_PRICE"] * p["SIZE"] + p["FEE_USD"]
             self.assertLessEqual(need, q["max_cost_usd"] + 0.01)
-            self.assertGreaterEqual(w["fund_usdc"], need * 1.02)
+            self.assertGreaterEqual(w["fund_usdc"], need + min(need * 0.02, 2))
 
     def test_a_close_cannot_rest_so_saves_no_fee(self):
         w = self.quote(TICKER, *CLOSE[1:])["worked"]
