@@ -41,8 +41,8 @@ Not this skill: covered calls, spreads or leverage.
    `min_size` is only its minimum.
 4. **The bad case first, in their words, before any upside number:** selling, from
    `bad_case`; buying, that what it costs is gone.
-5. **First time for that kind of trade:** the plain yes answers in
-   `selling.md` or `buying.md`. A no or a vague answer stops it.
+5. **First time:** a quote with `first_time_check`: its questions alone,
+   the offer after their yes (`buying.md`, `selling.md`). A no stops it.
 6. **Figures come only from this turn's reads:** sizes, prices and positions
    from `acp options account` and quotes, never memory; fix a note that
    disagrees. `bevo-read assets` has none.

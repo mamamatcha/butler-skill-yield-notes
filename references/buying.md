@@ -14,8 +14,13 @@ nothing is locked beyond it.
 
 ## The first-time check
 
-Before an owner's first bought option ever, get three plain yes answers. If any is no
-or vague, do not quote:
+A quote carrying `first_time_check` is **not offered yet**: the account holds no
+bought option (the server keeps no history, so that is the test). The whole reply is its
+`questions`, as written, each on its own line, and nothing else: no figures, no ways to buy, no question about the number.
+A yes to that message (one "yes" or "clear" to all three is enough) lets the next reply
+offer the quote; a no or a vague answer ends it. Never fold them into the offer: a yes to
+the offer, a route or the number never answers them. Once answered yes in this chat, later quotes still
+carry the field; offer those. Off Derive (no field), the same three before an owner's first bought option:
 
 - "You can lose everything you pay for this. Clear?"
 - "It only makes money if ETH ends past the breakeven on the expiry date, and it is
@@ -79,13 +84,20 @@ line. In this order:
    - **Order manager**: it rests at Derive's fair price for up to an hour and reprices
      as the market moves; `worked.saves_up_to_usd` (`saves_up_to_pct`) as an estimate;
      unfilled by then, it buys at the ask, never over the ceiling (`order-manager.md`).
+     With `worked.wallet_short_usd`, add that its wallet is funded from their main
+     wallet, which is that much short: "needs $X more in your main wallet".
 
    In that order, unless `worked.recommended` is true: then the order manager first,
    marked recommended with its reason in a few words (the ask is
    `worked.ask_over_fair_pct` above Derive's fair price). Never mark it otherwise.
-8. **The question**: the route and the yes to the number, one line: "Which route? You
-   can lose up to $499.56 - OK?" A yes with no route takes the first one listed; say
-   which as it is filed. Off Derive, the yes alone.
+8. **The question**: `route_question` as written, always, even when the first-time
+   questions share the reply; then the yes to the number: "Which
+   route? A plain yes buys now from the order book, at the ask. You can lose up to
+   $499.56 - OK?" A yes with no route takes the way `route_question` names, the first
+   one listed: the order book at market, or the order manager when recommended. The
+   route is the one in the offer they answered: a re-quote before filing that turns
+   `recommended` the other way never changes it. Say which as it is filed. When it names none (their ceiling is under today's price), a
+   plain yes files nothing: ask which. Off Derive, the yes alone.
 
 "Not yield" is said only when they came asking for yield or income. A put's pays
 bullet reads "below": "Pays $3.45 for every $1 ETH is below $2,350 on 30 Oct; profit
@@ -99,12 +111,14 @@ price holds, they pay about `total_cost_usd`. The cost bullet says the room and 
 they can set their own, once; do not ask about it. A yes to the
 amount is a yes to `max_cost_usd`.
 
-If they name their own ceiling ("no more than $195", "no room"), it replaces
-`max_cost_usd` everywhere: in the yes, in funding, and in `--max-cost`. Naming it is
+If they name their own ceiling ("no more than $195", "no room"), quote again with
+`--max-cost <THEIRS>`: the new `max_cost_usd` is theirs, and so is `worked.params`'s
+bound. It replaces the suggested one everywhere: in the yes, in funding, and in `--max-cost`. Naming it is
 not the yes: ask again with it, "You can lose the whole $195 - yes?", and file only
 after that yes. Never pick a different ceiling for them.
 
-- Under `total_cost_usd`: it would not fill at today's price. Say that and ask again.
+- Under `total_cost_usd`: the quote warns that buying now will not fill. Say the
+  warning; RFQ, a limit order or the order manager may still get it, never over theirs.
 - With a budget, never over `budget_usd`; for more, quote again with the new budget.
 - Less room means more no-fills. A buy that does not fill moved past their ceiling:
   re-quote and re-ask, never re-file the same ceiling.
@@ -210,7 +224,8 @@ Three ways to buy it on Derive:
    ETH moves. Est. $16.02 (3.4%) saved. Unfilled by then, it buys at the ask, never
    over $499.56.
 
-Which route? You can lose up to $499.56 - OK?
+Which route? A plain yes buys now from the order book, at the ask.
+You can lose up to $499.56 - OK?
 ```
 
 With `worked.recommended` and a warning (a $2,500 ETH call, the ask 6% above fair):
@@ -232,7 +247,8 @@ Three ways to buy it on Derive:
 2. Order book: market (now, at the ask) or limit (your price).
 3. RFQ: I ask the market makers; it fills only if a quote beats the book and your limit.
 
-Which route? You can lose up to $2,499.88 - OK?
+Which route? A plain yes starts the order manager.
+You can lose up to $2,499.88 - OK?
 ```
 
 On Paradex, a warning and `rfq_offer`:

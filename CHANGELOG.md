@@ -43,6 +43,34 @@
   `fund_usdc` covers it. The ladder still starts at the mark and walks toward the live
   ask. At the deadline the makers must beat the book and the book fills at its live
   ask; the ceiling only bounds a market that moved, as it does a buy now.
+- **The owner's own ceiling bounds the order manager too.** `order-manager.md` said to
+  set `WORST_PRICE` to today's ask for a lower ceiling of their own, which pays over it
+  when that ceiling is under today's total ("at most $470" on a $475.77 quote).
+  `quote.py quote --side buy` takes `--max-cost <THEIRS>` (never over `--budget`):
+  `max_cost_usd`, `worked.params` and `fund_usdc` are then theirs, the bound may sit
+  under the ask, and one under today's total warns that buying now will not fill.
+- **The offer says what a plain yes picks.** A Derive buy quote carries `route_question`
+  ("Which route? A plain yes buys now from the order book, at the ask.", or "... starts
+  the order manager." when recommended), said as written before "You can lose up to $X
+  - OK?". Under an owner's ceiling below today's total it names none and asks for a pick.
+  The route is the one in the offer they answered: in the eval, the ask slid from 7% to
+  4.5% over the mark between offer and yes, and the re-quote before filing sent 7 of 10
+  plain yeses to the book after "a plain yes starts the order manager".
+- **The order manager is never recommended when the main wallet cannot fund it.** Its
+  wallet is funded from the main wallet, not the Derive balance. In the eval, an owner
+  with $3,000 on Derive and $61.81 in the wallet was told "a plain yes starts the order
+  manager", and Butler then switched to the book. A Derive buy quote reads `bevo-read
+  assets` itself: `worked.wallet_cash_usd`, and `wallet_short_usd` when it is under
+  `fund_usdc`, which turns `recommended` off (so a plain yes buys from the book). The
+  offer says how much more the main wallet needs.
+- **The first-time questions are asked on their own, before the offer.** In the eval
+  (83 filed trials), Butler folded them into the offer as statements or one "Clear on
+  all three?" in 46, and one "yes" to the route or the number then filed the trade; in
+  12 they were never said. The server keeps no trade history, so Butler was also
+  guessing whether it was a first time. A Derive buy or put-sale quote now carries
+  `first_time_check` (its three questions) when the account holds no bought option
+  (buy) or sold put (sell); the reply is those questions alone, and the offer follows
+  their yes.
 - **A worked buy is quick by default, and said as it runs.** 60 minutes for a buy
   (240 for a sale or close): each 1% the market moves while it waits is worth $50-140
   on a $500 option, against a saving of $5-10. There is no longest run: "until I

@@ -33,8 +33,13 @@ and keeping the fee. The premium is certain. What they own at expiry is not.
 
 ## The first-time check
 
-Before an owner's first note ever, get three plain yes answers. If any is no or
-vague, do not quote:
+A quote carrying `first_time_check` is **not offered yet**: the account holds no
+sold put (the server keeps no history, so that is the test). The whole reply is its
+`questions`, as written, each on its own line, and nothing else: no figures, no ownership question.
+A yes to that message (one "yes" or "clear" to all three is enough) lets the next reply
+offer the quote; a no or a vague answer ends it. Never fold them into the offer: a yes to
+the offer or the ownership question never answers them. Once answered yes in this chat, later quotes still
+carry the field; offer those. Off Derive (no field), the same three before an owner's first note:
 
 - "If ETH falls hard, you end up paying the strike for it, at a loss. Clear?"
 - "Your money is locked until the expiry date. Getting out early means buying the

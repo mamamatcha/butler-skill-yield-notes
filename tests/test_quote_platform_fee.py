@@ -156,6 +156,31 @@ class PlatformFeeTest(unittest.TestCase):
         self.assertIn("unrecognized arguments", err)
 
 
+class FirstTimeCheckTest(unittest.TestCase):
+    """The server keeps no history: an account holding no option of the kind asks first."""
+
+    BUY = ("quote", "--side", "buy", "--product", "call", "--underlying", "ETH", "--strike", "1900", "--size", "1")
+
+    def quote(self, positions, *argv):
+        h = helper(account({"platformFeeRate": 0, "account": {"exists": True, "positions": positions}})[0])
+        code, out, err = run(h, *argv)
+        self.assertEqual(code, 0, err)
+        return json.loads(out)
+
+    def test_no_bought_option_asks_the_three_questions(self):
+        q = self.quote([{"instrument": "ETH-20261225-1500-P", "size": -0.1}], *self.BUY)
+        self.assertEqual(len(q["first_time_check"]["questions"]), 3)
+        self.assertIn("ETH ends past the breakeven", q["first_time_check"]["questions"][1])
+
+    def test_a_bought_option_held_skips_them(self):
+        q = self.quote([{"instrument": ETH_CALL, "size": "0.5"}], *self.BUY)
+        self.assertNotIn("first_time_check", q)
+
+    def test_paradex_is_not_read_so_carries_none(self):
+        h = helper(account({"platformFeeRate": 0})[0])
+        self.assertEqual(h.first_time_check("buy", "ETH"), {})
+
+
 class WorkedSavingTest(unittest.TestCase):
     """What the order manager could save, as the offer says it: the price and the fee."""
 
@@ -203,6 +228,60 @@ class WorkedSavingTest(unittest.TestCase):
         self.assertEqual((near["recommended"], near["ask_over_fair_pct"]), (False, 2.0))
         small = self.quote(dict(TICKER, a="52"), *self.BUY, "--size", "1")["worked"]  # $52, 6.1% over
         self.assertFalse(small["recommended"])
+
+    def test_the_owners_lower_ceiling_bounds_the_order_manager(self):
+        base = self.quote(TICKER, *self.BUY, "--budget", "500", rate=0.005)
+        own = round(base["total_cost_usd"] - 5, 2)  # under today's price
+        q = self.quote(TICKER, *self.BUY, "--budget", "500", "--max-cost", str(own), rate=0.005)
+        p, w = q["worked"]["params"], q["worked"]
+        self.assertEqual(q["max_cost_usd"], own)
+        self.assertLess(p["WORST_PRICE"], q["ask_price"])
+        self.assertLessEqual(p["WORST_PRICE"] * p["SIZE"] + p["FEE_USD"], own)
+        self.assertEqual(p["FILL_NOW_PRICE"], q["ask_price"])
+        self.assertLessEqual(w["fund_usdc"], own + 2 + 1)
+        self.assertTrue(any("will not fill" in x for x in q["warnings"]), q["warnings"])
+        self.assertIn("so pick one", q["route_question"])
+
+    def test_the_owners_higher_ceiling_is_carried_too(self):
+        q = self.quote(TICKER, *self.BUY, "--size", "10", "--max-cost", "600")
+        p = q["worked"]["params"]
+        self.assertEqual(q["max_cost_usd"], 600)
+        self.assertGreater(p["WORST_PRICE"] * p["SIZE"], 0.95 * 600 - p["FEE_USD"])
+        self.assertLessEqual(p["WORST_PRICE"] * p["SIZE"] + p["FEE_USD"], 600)
+        self.assertFalse(any("will not fill" in x for x in q["warnings"]))
+
+    def test_max_cost_is_a_buy_flag_never_over_the_budget(self):
+        h = helper(account({"platformFeeRate": 0})[0])
+        code, _, err = run(h, "quote", *self.BUY, "--budget", "500", "--max-cost", "501")
+        self.assertEqual(code, 2, err)
+        code, _, err = run(helper(account({"platformFeeRate": 0})[0]), "quote", *CLOSE[1:], "--max-cost", "5")
+        self.assertEqual(code, 2, err)
+
+    def test_the_route_question_says_what_a_plain_yes_takes(self):
+        book = self.quote(TICKER, *self.BUY, "--size", "10")
+        self.assertIn("buys now from the order book", book["route_question"])
+        big = self.quote(dict(TICKER, a="52"), *self.BUY, "--size", "20")
+        self.assertIn("starts the order manager", big["route_question"])
+
+    def test_a_main_wallet_short_of_the_funding_is_never_recommended(self):
+        h = helper(account({"platformFeeRate": 0, "cashUsd": 61.81})[0])
+        h.tickers_for = lambda cur, expiry: {ETH_CALL: dict(TICKER, a="52")}
+        code, out, err = run(h, "quote", *self.BUY, "--size", "20")
+        self.assertEqual(code, 0, err)
+        q = json.loads(out)
+        w = q["worked"]
+        self.assertFalse(w["recommended"])
+        self.assertEqual(w["wallet_cash_usd"], 61.81)
+        self.assertEqual(w["wallet_short_usd"], int(-(-(w["fund_usdc"] - 61.81) // 1)))
+        self.assertIn("buys now from the order book", q["route_question"])
+
+    def test_a_funded_main_wallet_keeps_it(self):
+        h = helper(account({"platformFeeRate": 0, "cashUsd": 5000})[0])
+        h.tickers_for = lambda cur, expiry: {ETH_CALL: dict(TICKER, a="52")}
+        code, out, err = run(h, "quote", *self.BUY, "--size", "20")
+        w = json.loads(out)["worked"]
+        self.assertTrue(w["recommended"])
+        self.assertNotIn("wallet_short_usd", w)
 
     def test_paradex_is_never_worked(self):
         h = helper(account({"platformFeeRate": 0})[0])

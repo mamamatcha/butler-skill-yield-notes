@@ -63,6 +63,9 @@ PLATFORM = {"rate": 0.0}
 # What a server too old to report `platformFeeRate` charges.
 LEGACY_PLATFORM_RATE = 0.005
 MAX_PLATFORM_RATE = 0.05
+# The owner's Derive positions, from the same account read: None when not read (Paradex,
+# Rysk). The server keeps no trade history, so holding none of a kind is the first-time test.
+ACCOUNT = {"positions": None}
 VENUES = {"derive": {"id": "derive", "name": "Derive"},
           "paradex": {"id": "paradex", "name": "Paradex"}}
 
@@ -393,6 +396,8 @@ def platform_rate():
         body = json.loads(run.stdout)
     except ValueError:
         raise RuntimeError("%s: not JSON" % why)
+    positions = (body.get("account") or {}).get("positions")
+    ACCOUNT["positions"] = positions if isinstance(positions, list) else []
     rate = body.get("platformFeeRate", LEGACY_PLATFORM_RATE)
     if isinstance(rate, bool) or not isinstance(rate, (int, float)) or not 0 <= rate <= MAX_PLATFORM_RATE:
         raise RuntimeError("%s: platformFeeRate %r is not a share from 0 to %s" % (why, rate, MAX_PLATFORM_RATE))
@@ -403,6 +408,31 @@ def platform_fee(premium):
     """The Virtuals platform fee on this premium (book price x size), rounded up to
     Derive's 0.000001 USDC step, as the server sends it on the order."""
     return max(0.0, math.ceil(premium * PLATFORM["rate"] * 1e6 - 1e-6) / 1e6)
+
+
+FIRST_TIME = {
+    "buy": ("You can lose everything you pay for this. Clear?",
+            "It only makes money if {u} ends past the breakeven on the expiry date, and it is "
+            "worth a little less every day {u} stands still. Clear?",
+            "You can sell it back before then, but only for what the market pays at the time, "
+            "often less than you paid. Clear?"),
+    "sell": ("If {u} falls hard, you end up paying the strike for it, at a loss. Clear?",
+             "Your money is locked until the expiry date. Getting out early means buying the "
+             "note back, and that can cost more than you were paid. Clear?",
+             "The premium is yours whatever happens. The collateral is not. Clear?"),
+}
+
+
+def first_time_check(side, underlying):
+    """The first-time questions, when the Derive account holds no option of this kind
+    (bought: size above 0; sold: below 0). Nothing when the account was not read."""
+    positions = ACCOUNT["positions"]
+    if positions is None:
+        return {}
+    if any((num(x.get("size")) > 0) == (side == "buy") and num(x.get("size")) != 0
+           for x in positions if isinstance(x, dict)):
+        return {}
+    return {"first_time_check": {"questions": [t.format(u=underlying) for t in FIRST_TIME[side]]}}
 
 
 def fee_fields(venue_fee, ours):
@@ -525,14 +555,38 @@ def worked(action, name, inst, size, price, fee, mark, need_usd=0.0, worst=None,
     }}
 
 
-def worked_buy_worst(inst, ask, size, max_cost, venue_fee):
+def worked_buy_worst(inst, ask, size, max_cost, venue_fee, own=False):
     """A worked buy's bound per contract: the ceiling an ordinary buy carries
-    (`max_cost_usd`, fees in), on Derive's tick and never under today's ask."""
+    (`max_cost_usd`, fees in), on Derive's tick. The quote's own ceiling never goes
+    under today's ask; the owner's (`own`) may, and is never passed."""
     tick = num(inst.get("tick_size")) or 0.1
     if size <= 0:
         return ask
     each = (max_cost - venue_fee) / (size * (1 + PLATFORM["rate"]))
-    return max(ask, rnd(math.floor(each / tick + 1e-9) * tick, 8))
+    worst = rnd(math.floor(each / tick + 1e-9) * tick, 8)
+    return max(worst, tick) if own else max(ask, worst)
+
+
+def wallet_cash():
+    """Spendable cash in the owner's main wallet (`bevo-read assets` `cashUsd`), which
+    funds the order manager's own wallet; None when it cannot be read."""
+    try:
+        run = subprocess.run(["bevo-read", "assets"], capture_output=True, text=True, timeout=30)
+        cash = json.loads(run.stdout).get("cashUsd") if run.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired, ValueError, AttributeError):
+        return None
+    return float(cash) if isinstance(cash, (int, float)) and not isinstance(cash, bool) else None
+
+
+def route_question(recommended, under_now=False):
+    """The offer's closing route question, saying which way a yes with no pick takes.
+    Under an owner's ceiling below today's total, buying now cannot fill: none."""
+    if under_now:
+        return ("Which route? Buying now will not fill under your ceiling, so pick one: "
+                "a limit order, RFQ or the order manager.")
+    if recommended:
+        return "Which route? A plain yes starts the order manager."
+    return "Which route? A plain yes buys now from the order book, at the ask."
 
 
 def settle(q, waived):
@@ -662,6 +716,7 @@ def build_quote(product, underlying, collateral_usd, tenor="monthly",
     if dte > 0 and locked_usd > 0:
         q["apr_pct"] = rnd(net / locked_usd * (365 / dte) * 100, 2)
     if opt_type == "P":
+        q.update(first_time_check("sell", underlying))
         low = spot * (1 - BAD_CASE_FALL)
         q["bad_case"] = {
             "fall_pct": int(BAD_CASE_FALL * 100),
@@ -764,9 +819,10 @@ def cost_line(premium, fee, total, ceiling):
 
 def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
                     otm_pct=5.0, target_delta=None, want_size=None, on=None, strike=None,
-                    waived=()):
+                    waived=(), own_ceiling=None):
     """Price buying one call or put. Sized from the budget (premium + fee, with
-    room for the price to move), or exactly want_size contracts for a hedge."""
+    room for the price to move), or exactly want_size contracts for a hedge.
+    `own_ceiling` is the owner's own `--max-cost`, in place of the suggested one."""
     if product not in ("call", "put"):
         raise VenueError("a buy is a call or a put, not %r" % product)
     opt_type = "C" if product == "call" else "P"
@@ -851,6 +907,8 @@ def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
     max_cost = math.ceil(total_r * MAX_COST_HEADROOM * 100 - 1e-6) / 100
     if budget_usd is not None:
         max_cost = min(max_cost, rnd(budget_usd, 2))
+    if own_ceiling is not None:
+        max_cost = rnd(own_ceiling, 2)
     gap = (ask_iv - mark_iv) * 100 if mark_iv > 0 else 0.0
 
     q.update({
@@ -870,7 +928,7 @@ def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
         "valid_until": iso(now + QUOTE_TTL_SEC),
     })
     # Worked, the buy may pay what the ordinary one may: its ceiling, per contract.
-    worst = worked_buy_worst(inst, ask, size, max_cost, venue_fee)
+    worst = worked_buy_worst(inst, ask, size, max_cost, venue_fee, own=own_ceiling is not None)
     fee_worst = venue_fee + platform_fee(worst * size)
     q.update(worked("buy", inst["instrument_name"], inst, size, ask, fee_worst, mark,
                     worst * size + fee_worst, worst=worst, other=num(t.get("b")), index=spot,
@@ -879,12 +937,26 @@ def build_buy_quote(product, underlying, budget_usd=None, tenor="monthly",
         over = ask / mark - 1 if mark > 0 else 0.0
         q["worked"]["ask_over_fair_pct"] = rnd(over * 100, 1)
         q["worked"]["recommended"] = gross >= WORK_RECOMMEND_MIN_USD and over >= WORK_RECOMMEND_OVER_FAIR
+        cash = wallet_cash()
+        if cash is not None:
+            fund = q["worked"]["fund_usdc"]
+            q["worked"]["wallet_cash_usd"] = rnd(cash, 2)
+            if cash < fund:  # its card draws on the main wallet, not on Derive
+                q["worked"]["wallet_short_usd"] = int(math.ceil(fund - cash))
+                q["worked"]["recommended"] = False
+        q["route_question"] = route_question(q["worked"]["recommended"],
+                                             own_ceiling is not None and max_cost < total_r)
+    if own_ceiling is not None and max_cost < total_r:
+        q["warnings"].append(
+            "your ceiling of $%.2f is under today's $%.2f, so buying now at the ask will not "
+            "fill; RFQ or the order manager may still find it at your price" % (max_cost, total_r))
 
     if ask_sz < size:
         q["warnings"].append(
             "the best ask is only %s contracts and this buy is %s - it may fill "
             "part-way" % (plain(ask_sz), plain(size)))
     share = ask / mark - 1 if mark > 0 else 0.0
+    q.update(first_time_check("buy", underlying))
     check_spread(q, share, (ask - mark) * size,
                  "the market is wide: you would be paying %d%% over fair value ($%.2f)")
     check_fees(q, fee / gross)
@@ -1148,6 +1220,8 @@ def build_asked_quote(p, a):
             p.error("quote --side %s needs %s" % (a.side, ", ".join(
                 "--" + f.replace("_", "-") for f in missing)))
 
+    if a.max_cost is not None and a.side != "buy":
+        p.error("--max-cost goes with --side buy")
     if a.side == "close":
         need("instrument", "size")
         return build_close_quote(a.instrument, a.size)
@@ -1160,9 +1234,11 @@ def build_asked_quote(p, a):
             p.error("quote --side buy takes one of --budget or --size")
         if a.product not in ("call", "put"):
             p.error("quote --side buy takes --product call or put")
+        if a.max_cost is not None and not 0 < a.max_cost <= (a.budget or a.max_cost):
+            p.error("--max-cost is above 0 and never over --budget")
         otm = 5.0 if a.otm_pct is None else a.otm_pct
         return build_buy_quote(a.product, a.underlying, a.budget, a.tenor, otm, a.delta, a.size, a.expiry,
-                               a.strike, a.waive)
+                               a.strike, a.waive, a.max_cost)
     need("collateral")
     if a.product not in ("cash_secured_put", "covered_call"):
         p.error("quote --side sell takes --product cash_secured_put or covered_call")
@@ -1190,6 +1266,8 @@ def main():
     q.add_argument("--underlying")
     q.add_argument("--collateral", type=float, help="sell: USD to lock")
     q.add_argument("--budget", type=float, help="buy: the most to spend, fees included")
+    q.add_argument("--max-cost", type=float, default=None,
+                   help="buy: the owner's own ceiling, fees included, in place of max_cost_usd")
     q.add_argument("--instrument", help="close, buyback: the option held")
     q.add_argument("--size", type=float,
                    help="close, buyback: contracts; buy: exact contracts instead of --budget")

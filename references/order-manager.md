@@ -9,7 +9,9 @@ in the first minute; the rest wait, and may not fill at all.
 **One of three ways on every Derive buy.** A buy quote with `worked` offers the order
 book, RFQ and the order manager (`buying.md` § The shape). The order manager goes
 first, suggested, only when `worked.recommended` is true (§ The saving). The pick stays
-theirs: "buy it now", "just buy it" files the ordinary buy. A put sale or a close
+theirs: "buy it now", "just buy it" files the ordinary buy. A yes with no pick takes
+the way the offer's `route_question` named, even when the re-quote before filing
+says otherwise. A put sale or a close
 is worked only when they ask ("get me a better price", "work the order", "no rush").
 **Derive only**: on Paradex and Rysk, say it works on Derive only.
 
@@ -20,7 +22,9 @@ The offer's line says how it ends (2); the wallet (1) and where it holds what it
 
 1. **It trades from a wallet of its own.** The money leaves their main wallet on one
    funding card, and from then on the duty trades with no further approval, inside the
-   ceiling they agreed. What it does not spend comes back to their main wallet on its
+   ceiling they agreed. The card draws on the main wallet only, never on their Derive
+   balance: picked with `worked.wallet_short_usd`, say they need that much more in the
+   main wallet, file nothing, and re-quote once they have added it. What it does not spend comes back to their main wallet on its
    own after the receipt, with no card; what it bought stays in that wallet's account.
 2. **How it ends.** It starts at Derive's fair price and moves toward today's price. If
    nothing fills by the deadline, it takes the book, as long as the price is still
@@ -66,13 +70,15 @@ inside the ceiling.
    | `worked.params` | the duty's settings, passed as they are. `WORST_PRICE` is the bound per contract: the bid selling; buying, the ceiling an ordinary buy carries (`max_cost_usd`), with `FILL_NOW_PRICE` today's ask for the receipt |
    | `worked.fund_usdc` | what the duty's wallet starts with: the collateral, or the cost at the ceiling, plus the fee and 2% (at most $2) for the bridge, never under $12 |
    | `worked.saves_up_to_usd`, `worked.saves_up_to_pct` | the most working it could save, price and fee (§ The saving) |
+   | `worked.wallet_cash_usd`, `worked.wallet_short_usd` | the main wallet's cash, and how far it is under `fund_usdc` (absent when it covers it). Short, the order manager is never `recommended` |
 
    No `worked`: the quote is not Derive's, or has no live price; it cannot be worked.
 2. Offer it as `buying.md` § The shape (a buy), or for a sale or close as bullets:
    the three points above, the ceiling ("never over $35.20 for each ETH" buying, "never
    under $41" selling), how long, and `fund_usdc`. The yes to a buy is the yes to
-   `max_cost_usd`. A lower ceiling of their own: set `WORST_PRICE` to `FILL_NOW_PRICE`
-   (today's price), which stays inside it. Get a yes.
+   `max_cost_usd`. A ceiling of their own: quote again with `--max-cost <THEIRS>`
+   (`buying.md` § The ceiling), and file that quote's `worked`; never edit
+   `WORST_PRICE` by hand. Get a yes.
 3. **Money left from an earlier one.** Before a new wallet, `duty_list`: each finished
    `options-order-manager` duty names its `walletId` (`@2` sends home all but under $3;
    `@1` sends nothing). `bevo-read get

@@ -13,7 +13,7 @@ with `--venue paradex`, and nothing else. Selling, buying, closing, funding and 
 ```sh
 python3 ~/skills/options-trading/scripts/quote.py screen --collateral <USD>
 python3 ~/skills/options-trading/scripts/quote.py quote --product cash_secured_put --underlying <ASSET> --collateral <USD> [--expiry <DAY>] [--strike <N>]
-python3 ~/skills/options-trading/scripts/quote.py quote --side buy --product <PRODUCT> --underlying <ASSET> --budget <USD> [--expiry <DAY>] [--strike <N>]
+python3 ~/skills/options-trading/scripts/quote.py quote --side buy --product <PRODUCT> --underlying <ASSET> --budget <USD> [--expiry <DAY>] [--strike <N>] [--max-cost <THEIRS>]
 python3 ~/skills/options-trading/scripts/quote.py quote --side close --instrument <INSTRUMENT> --size <SIZE>
 python3 ~/skills/options-trading/scripts/quote.py quote --side buyback --instrument <INSTRUMENT> --size <SIZE> --premium-received <USD>
 ```
@@ -165,7 +165,10 @@ delta is 0.15 or less and that has a bid; none fits, it is refused saying so.
 | `premium_usd` | the ask times the size |
 | `fee_usd` | Derive's taker fee plus the Virtuals platform fee, split as on a sell |
 | `total_cost_usd` | `premium_usd` plus `fee_usd`: what the owner pays at today's ask |
-| `max_cost_usd` | the ceiling: about 5% over `total_cost_usd`, rounded up to the cent, never over the budget; passed to `--max-cost` unless the owner sets their own. It is what the owner agrees they can lose |
+| `max_cost_usd` | the ceiling: about 5% over `total_cost_usd`, rounded up to the cent, never over the budget; passed to `--max-cost`. The owner's own: quote again with `--max-cost <THEIRS>` (never over the budget), and this is it, `worked` too; under `total_cost_usd`, a warning says buying now will not fill. It is what the owner agrees they can lose |
+| `first_time_check` | Derive only, when the account holds no option of this kind (bought for a buy, sold for a put sale): its `questions`, sent alone before the offer (`buying.md`, `selling.md` § The first-time check) |
+| `worked.wallet_short_usd` | a Derive buy: how far the main wallet's cash (`wallet_cash_usd`) is under `fund_usdc`; the order manager is then not `recommended` (`order-manager.md`) |
+| `route_question` | Derive only: the route question that ends the offer, as written; it names the way a yes with no pick takes (`buying.md` § The shape) |
 | `cost_line` | the price in one sentence: today's total with its premium and fee, then the ceiling and its room. The offer says its figures as bullets (`buying.md` § The shape) |
 | `breakeven` | at expiry: strike plus total cost per contract for a call, minus it for a put |
 | `overpay_vs_fair_vol_pts` | how far the ask sits over Derive's own mark; positive for a buyer |
