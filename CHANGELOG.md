@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.18.3
+
+- **Auto-roll is pitched first to an owner who wants steady income.** Seen on a live
+  butler: "I want to generate steady yield from selling options, $500, what do you
+  recommend?" got a list of assets on three venues and a one-month put, and auto-roll
+  came up only when the owner named it. `SKILL.md` (When to use), `selling.md` (Does it
+  fit?) and `duty.md` (Auto-roll, When to offer it) now send "steady yield", "regular" or
+  "passive income", "every week" and "what do you recommend" to auto-roll's pitch first.
+  A named strike or date, owning the coin, Paradex, Rysk or another coin stay one put.
+- **Its replies are short bullets.** The pitch: one line, **How it works** in four
+  bullets, then **To start, tell me** the coin and the amount. It replaces the general
+  three-question first reply, as the wallet and the venue are fixed. The first trade:
+  Sell, You earn, Fees, below the strike, After that, Stops, then "Start?". The three
+  first-time checks are bullets, only before an owner's first put.
+- **The coin is always the owner's.** The pitch never names one they did not; it asks
+  ETH or BTC with each one's floor (`quote.py minimum --tenor weekly`).
+- **`make_duty.py --preset auto-roll` takes ETH or BTC only.** Its rule reads a put's
+  expiry as 08:00 UTC, which Derive's other weeklies (NVDA at 21:00, for one) are not.
+
 ## 2.18.1
 
 - **One minimum deposit, $11, and a wallet short of it gets one figure.** Seen in QA: a

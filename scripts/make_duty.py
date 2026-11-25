@@ -67,6 +67,7 @@ STATUS = {
 
 # duty.md "Auto-roll": a weekly put whenever nothing is open, the strike nearest spot at least
 # MIN_BELOW_PCT under it with a delta of MAX_DELTA or less, sized to all its free USDC.
+AUTO_ROLL_ASSETS = ("ETH", "BTC")  # Derive's weeklies on these expire at 08:00 UTC, as expiry_of reads
 AUTO_ROLL = '''UNDERLYING = str(P["UNDERLYING"]).upper()
 BELOW = float(P.get("MIN_BELOW_PCT", 8))
 ODDS = float(P.get("MAX_DELTA", 0.15))
@@ -295,9 +296,9 @@ def build(a):
     if a.preset == "auto-roll" and (not a.end_at or a.max_loss is None):
         raise Refused("--preset auto-roll needs --end-at and --max-loss: the owner's end date and "
                       "loss limit (duty.md offers 13 weeks and 10%% of the amount set aside)")
-    if a.preset == "auto-roll" and not str(extra.get("UNDERLYING") or "").strip():
-        raise Refused("--preset auto-roll needs --param UNDERLYING=ETH (or BTC): the asset it "
-                      "sells puts on")
+    if a.preset == "auto-roll" and str(extra.get("UNDERLYING") or "").strip().upper() not in AUTO_ROLL_ASSETS:
+        raise Refused("--preset auto-roll needs --param UNDERLYING=ETH or BTC, the coin the owner "
+                      "named: its rule waits for an 08:00 UTC expiry, which other assets lack")
     try_trigger(rule, extra)
 
     program = read(PROGRAM)
