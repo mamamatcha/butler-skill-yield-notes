@@ -6,15 +6,24 @@
   in a live chat (24 Nov): asked to buy a $500 ETH put "via the order manager", Butler
   said it could save "$2.03 at best", $0 on the other two strikes, then $2.71 for the
   same put a few minutes later. `order-manager.md` offered it only when asked, and RFQ
-  only for a wide or thin book. `buying.md` now has a fifth beat on Derive: the order
-  book (now, or a limit at their price), RFQ, and the order manager with what it could
-  save. The order manager goes first, suggested, when the buy quote's new
+  only for a wide or thin book. A Derive buy offer now ends with three ways: the order
+  book (market or limit), RFQ, and the order manager with what it could save. The order
+  manager goes first, marked recommended, when the buy quote's new
   `worked.recommended` is true: a premium of $1,000 or more with the ask 5% or more over
   Derive's mark (`worked.ask_over_fair_pct`). Live on 25 Nov, the median near-the-money
   ETH and BTC ask (delta 0.1-0.6, 76 options) was about 3% over the mark; 29% were over
   5%. On a Derive buy RFQ is always one of the three, so `rfq_offer` is not said again;
   a yes with no pick takes the first one listed. A sale or close is still worked only
   when asked.
+- **Offers are short bullets, not paragraphs.** The same chat's offers ran to 200 words
+  of prose. SKILL.md § Say to the owner now says: short bullets, a few words each, the
+  question on its own line, every figure kept. `buying.md` § The shape is a bullet
+  template (headline; cost and ceiling; fees; pays and breakeven; settles; warnings; the
+  three ways; one question for the route and the yes to the number), and the examples
+  in `buying.md`, `order-manager.md`, `rfq.md` and `resting.md` are bullets. A Derive buy
+  says the order manager's wallet and card when it is filed, not in the offer. "Not
+  yield" is said only to someone who asked for yield; the time-decay line is left to the
+  first-time check.
 - **The saving counts the fee.** `worked.at_mark_saves_usd` was the price to the mark
   alone, so a book already at the mark said $0. A resting fill pays Derive's maker fee
   (0.01% of the index) instead of the taker fee (0.03% plus a $0.50 base), and on

@@ -7,7 +7,7 @@ option expires. Rysk has no book, so it has none.
 
 It is the owner's choice, never Butler's: offer it only when they ask to wait for a
 price ("sell it at $41 or better", "leave a limit order", "only if it gets to $80"), or in
-the order book's line of a Derive buy's three ways (`buying.md` beat 5). The price is
+the order book's line of a Derive buy's three ways (`buying.md` § The shape). The price is
 always theirs: picked, ask for it.
 
 ## Two kinds
@@ -107,20 +107,31 @@ cancelled or expired, and nothing is filed. Read the account and say what it sho
 
 ## Say to the owner
 
-"I'll leave an order to sell the $2,200 put for $41 or more per ETH, 0.5 ETH, on
-Derive. It waits on the book until someone pays that, you cancel it, or it expires on 30
-October. $1,100 is set aside from now; if it fills you are paid at least $20.50 before
-fees, and you may end up buying 0.5 ETH at $2,200. You'll hear when it fills. Yes?"
+Bullets, a few words each, the question on its own line.
 
-A buy: "I'll leave an order to buy the $2,600 call for $19.10 or less per ETH, 0.2 ETH,
-on Derive. It waits until someone sells at that, you cancel it, or it expires on 27
-November. $3.82 is set aside from now. If it fills you pay at most $3.82 plus Derive's
-fee, and you can lose all of it. Yes?"
+```text
+Limit order to sell the $2,200 put, 0.5 ETH, on Derive:
 
-Placed: "It's on the book at $41 or more, nothing filled yet. I'll let you know when it
-does."
+- Fills only at $41 or more per ETH ($20.50 before fees).
+- Waits until it fills, you cancel, or it expires on 30 Oct.
+- $1,100 is set aside from now.
+- If it fills, you may end up buying 0.5 ETH at $2,200.
 
-Cancel filed: "I've put the cancel in your Approvals. Until you approve it, the order is
-still on the book and can still fill at $41."
+Place it?
+```
 
-Cancelled: "Your order is off the book. Nothing had filled, so the $1,100 is free again."
+A buy (picked from a Derive buy's three ways, so the yes is given):
+
+```text
+Limit order to buy the $2,600 call, 0.2 ETH, on Derive:
+
+- Fills only at $19.10 or less per ETH; at most $3.82 plus Derive's fee.
+- Waits until it fills, you cancel, or it expires on 27 Nov.
+- $3.82 is set aside from now.
+```
+
+Placed: "On the book at $41 or more; nothing filled yet. You'll hear when it does."
+
+Cancel filed: "Cancel is in your Approvals. Until you approve it, the order can still fill at $41."
+
+Cancelled: "Off the book. Nothing had filled; the $1,100 is free again."

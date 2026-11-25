@@ -18,7 +18,7 @@ Your owner wants Derive, Paradex or Rysk options:
   **bought**; "get out of my put", "free my collateral" **buys back** a note they
   **sold**.
 - **At their price** - "or better", "cancel my order": `resting.md`.
-- **A Derive buy: book, RFQ or order manager** (`buying.md` beat 5); "work the order": `order-manager.md`.
+- **A Derive buy: book, RFQ or order manager** (`buying.md` § The shape); "work the order": `order-manager.md`.
 - **Look or withdraw** - "my free USDC in Derive" (`freeForNewPutsUsd`, not wallet
   cash), "my positions": steps 1 and 9, then stop. "Withdraw my free USDC": step 8, never an
   `acp trade` (`account.md`). Listing: `listing.md`.
@@ -98,7 +98,7 @@ this chat. One missing: ask, and file nothing this turn.
      `expiry`; `apr_pct` last. Then, on its own: *"Happy to own 0.13 ETH at $2,200 on
      30 October?"* A no or a vague answer ends it: no other strike, tenor or asset.
      Butler buys the asset later only if they ask now.
-   - **Buy:** not yield; `cost_line` as written; the ceiling is all they can lose;
+   - **Buy:** bullets (`buying.md` § The shape); the ceiling is all they can lose;
      `breakeven` is where it pays at expiry. Get an explicit yes to *"you can lose the whole $199.54"*.
    - **Close (sell back):** `net_proceeds_usd` now, against what they paid (the
      position's `costUsd`). Ask the floor (`min_proceeds_usd` suggested).
@@ -214,4 +214,5 @@ failed: re-read the account and wait. Look up `:home` with `--route trade`.
 
 ## Say to the owner
 
-In each reference.
+In each reference. Always short bullets, a few words each, never a paragraph; the
+question on its own line. Keep every figure asked for; cut the rest.

@@ -7,7 +7,7 @@ step by step, never past the price the owner agreed. Most orders a maker will ta
 in the first minute; the rest wait, and may not fill at all.
 
 **One of three ways on every Derive buy.** A buy quote with `worked` offers the order
-book, RFQ and the order manager (`buying.md` § The shape, beat 5). The order manager goes
+book, RFQ and the order manager (`buying.md` § The shape). The order manager goes
 first, suggested, only when `worked.recommended` is true (§ The saving). The pick stays
 theirs: "buy it now", "just buy it" files the ordinary buy. A put sale or a close
 is worked only when they ask ("get me a better price", "work the order", "no rush").
@@ -15,7 +15,8 @@ is worked only when they ask ("get me a better price", "work the order", "no rus
 
 ## What is different
 
-Beat 5's line says the first two before the yes; the third is said when it is filed.
+The offer's line says how it ends (2); the wallet (1) and where it holds what it buys
+(3) are said when it is filed, with the funding card.
 
 1. **It trades from a wallet of its own.** The money leaves their main wallet on one
    funding card, and from then on the duty trades with no further approval, inside the
@@ -33,19 +34,19 @@ yes, and a quote run after their last answer.
 
 ## The saving
 
-Say `worked.saves_up_to_usd` with `worked.saves_up_to_pct` of the premium: "up to $5.25
-(1.1%)", never as a promise. It is two parts: the price, to a fill at Derive's mark
+Say `worked.saves_up_to_usd` with `worked.saves_up_to_pct` of the premium as an
+estimate: "Est. $5.25 (1.1%) saved", never as a promise. It is two parts: the price, to a fill at Derive's mark
 (`price_saves_usd`), and the fee, because a resting fill pays Derive's maker fee, not
-the taker fee (`fee_saves_usd`). When the fee is most of it, say "mostly in fees". Never
+the taker fee (`fee_saves_usd`). Never
 offer `at_mark_saves_usd`: it leaves the fee out and says $0 on a book already at the mark.
 
 The figure is live. A re-quote that changes it is said with why ("the price moved").
 
 **When it is suggested.** `worked.recommended` is true on a buy of $1,000 or more whose
 ask is 5% or more over Derive's mark: there waiting is worth the most. Then it goes
-first, with the reason in one sentence from `worked.ask_over_fair_pct` ("the asking
-price is 6.1% over Derive's fair price"). Otherwise it is listed third and never
-suggested, and once they pick another way it is not brought up again.
+first, marked recommended with the reason in a few words from
+`worked.ask_over_fair_pct` ("recommended: the ask is 6% above Derive's fair price").
+Otherwise it is listed third and never marked, and once they pick another way it is not brought up again.
 
 ## How long
 
@@ -67,7 +68,7 @@ inside the ceiling.
    | `worked.saves_up_to_usd`, `worked.saves_up_to_pct` | the most working it could save, price and fee (§ The saving) |
 
    No `worked`: the quote is not Derive's, or has no live price; it cannot be worked.
-2. Offer it as `buying.md` beat 5, or for a sale or close with step 3's sentences, then
+2. Offer it as `buying.md` § The shape (a buy), or for a sale or close as bullets:
    the three points above, the ceiling ("never over $35.20 for each ETH" buying, "never
    under $41" selling), how long, and `fund_usdc`. The yes to a buy is the yes to
    `max_cost_usd`. A lower ceiling of their own: set `WORST_PRICE` to `FILL_NOW_PRICE`
@@ -132,18 +133,31 @@ the duty's own chat).
 
 ## Say to the owner
 
-Short paragraphs, one idea each, the question on its own line. Its line in a buy's
-three ways (`buying.md` § Say to the owner has the whole offer):
+Bullets, a few words each, the question on its own line. Its line in a buy's three
+ways (`buying.md` § Say to the owner has the whole offer):
 
-"Order manager: it waits at Derive's fair price for up to an hour, up to $5.25 (1.1%)
-saved, mostly in fees. If no one sells by then, it buys at the asking price, still under
-your ceiling. It trades from a wallet of its own, funded by one $502 card; what it
-doesn't spend comes back to you."
+```text
+3. Order manager: I rest orders at Derive's fair price for up to 1 hour and reprice as
+   ETH moves. Est. $16.02 (3.4%) saved. Unfilled by then, it buys at the ask, never
+   over $499.56.
+```
 
-Filed: "It's set up. Approve the $502 funding card and it starts, with no more approvals
-after that. What it buys is held in its own wallet's Derive account, and what it doesn't
-spend comes back to your main wallet when it's done. You'll hear when it fills, or in
-an hour with what it paid."
+Filed:
 
-Stopped: "I've told it to stop. It takes its order off the book within a minute and
-sends you what filled."
+```text
+Set up. To start it:
+
+- Approve the $502 funding card. No more approvals after that.
+- It trades from its own wallet; what it buys is held there.
+- Unspent cash comes back to your main wallet when it's done.
+- You'll hear when it fills, or in 1 hour with what it paid.
+```
+
+Stopped:
+
+```text
+Stopping it:
+
+- Its order comes off the book within a minute.
+- You'll get a receipt for what filled.
+```

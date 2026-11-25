@@ -12,7 +12,7 @@ first for one, and offer the order book. A duty's order goes by RFQ the same way
 ## When Butler brings it up
 
 An owner may not know RFQ exists. **On a Derive buy, always**: it is one of the three ways
-(`buying.md` beat 5), so `rfq_offer` is not said again there. Otherwise, on Derive or
+(`buying.md` § The shape), so `rfq_offer` is not said again there. Otherwise, on Derive or
 Paradex, Butler offers it beside the order book, in one line and once per trade, in these
 three cases and no other:
 
@@ -35,10 +35,7 @@ three cases and no other:
   quote to take the bound from, so nothing can be filed: say so, and never make up a
   bound.
 
-After a no-fill, in their words: "Nobody took it at your $8 limit, so nothing was bought.
-I can quote it again for the order book, or ask the market makers for a price instead
-(RFQ): they get 20 seconds to quote inside your limit, and if none does, nothing is
-bought. Which one?"
+After a no-fill, as bullets (§ Say to the owner).
 
 ## Asked for the RFQ price before filing
 
@@ -80,9 +77,33 @@ to the book.
 
 ## Say to the owner
 
-"I'll ask Derive's market makers for a price on 0.1 ETH of the $1,850 call, 27 November,
-for at most $8 all in. Once you approve, they have 20 seconds to quote; the best quote under
-$8 is taken, and if none is, nothing is bought. You can lose all of it. Yes?"
+Bullets, a few words each, the question on its own line. Asked for RFQ outright:
 
-No fill: "No maker quoted under your $8 within 20 seconds, so nothing was bought. The best
-was $8.40. I can ask again at a higher limit if you say so, or buy from the order book."
+```text
+RFQ for 0.1 ETH of the $1,850 call, 27 Nov:
+
+- Makers get 20 seconds to quote, at most $8 all in.
+- The best quote under $8 is taken; none, nothing is bought.
+
+You can lose up to $8 - OK?
+```
+
+A book order did not fill:
+
+```text
+Nobody took it at your $8 limit; nothing was bought.
+
+1. Order book: quote it again.
+2. RFQ: makers get 20 seconds to quote inside your limit.
+
+Which one?
+```
+
+No maker quoted:
+
+```text
+No maker quoted under $8 in 20 seconds; nothing was bought.
+
+- Best quote: $8.40.
+- I can ask again at a higher limit, or buy from the order book.
+```

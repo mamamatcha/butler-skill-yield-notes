@@ -138,7 +138,7 @@ lowest strike, or `null` when the put is that one. Puts only.
 | `valid_until` | 60 seconds after the read; quote again past it |
 | `waive` | present only when a safeguard was waived; passed to `--waive` |
 | `rfq_offer` | present only when the book is wide or holds less than the size: the last line of the offer, as written |
-| `worked` | Derive only, on a put sale, a buy, a close and a buy-back: the `options-order-manager` duty's settings (`params`; a buy's `WORST_PRICE` is its ceiling per contract, `FILL_NOW_PRICE` today's ask), what its wallet starts with (`fund_usdc`), and the most working it could save, said as `saves_up_to_usd` and `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`; `at_mark_saves_usd` is the price alone). A buy adds `ask_over_fair_pct` and `recommended` (a premium of $1,000 or more with the ask 5% or more over the mark). One of the three ways on every Derive buy (`buying.md` beat 5), first when `recommended`; a sale or close only when asked (`order-manager.md`) |
+| `worked` | Derive only, on a put sale, a buy, a close and a buy-back: the `options-order-manager` duty's settings (`params`; a buy's `WORST_PRICE` is its ceiling per contract, `FILL_NOW_PRICE` today's ask), what its wallet starts with (`fund_usdc`), and the most working it could save, said as `saves_up_to_usd` and `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`; `at_mark_saves_usd` is the price alone). A buy adds `ask_over_fair_pct` and `recommended` (a premium of $1,000 or more with the ask 5% or more over the mark). One of the three ways on every Derive buy (`buying.md` § The shape), first when `recommended`; a sale or close only when asked (`order-manager.md`) |
 
 The spread is the share of the option's value the bid gives up (`1 - bid / mark`):
 over 10% warns, over 20% is the `spread` safeguard, and neither applies when it costs
@@ -166,7 +166,7 @@ delta is 0.15 or less and that has a bid; none fits, it is refused saying so.
 | `fee_usd` | Derive's taker fee plus the Virtuals platform fee, split as on a sell |
 | `total_cost_usd` | `premium_usd` plus `fee_usd`: what the owner pays at today's ask |
 | `max_cost_usd` | the ceiling: about 5% over `total_cost_usd`, rounded up to the cent, never over the budget; passed to `--max-cost` unless the owner sets their own. It is what the owner agrees they can lose |
-| `cost_line` | the price as the owner hears it: today's total with its premium and fee, then the ceiling and its room. Said as written |
+| `cost_line` | the price in one sentence: today's total with its premium and fee, then the ceiling and its room. The offer says its figures as bullets (`buying.md` § The shape) |
 | `breakeven` | at expiry: strike plus total cost per contract for a call, minus it for a put |
 | `overpay_vs_fair_vol_pts` | how far the ask sits over Derive's own mark; positive for a buyer |
 | `fair_value_usd` | Derive's mark times the size |
