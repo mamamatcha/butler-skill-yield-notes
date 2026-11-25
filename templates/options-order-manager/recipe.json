@@ -1,6 +1,6 @@
 {
   "id": "options-order-manager",
-  "version": 1,
+  "version": 2,
   "description": "Work one Derive options order from its own wallet for a better price than filling at once: take a maker who saves half the spread, rest at the mark, never past the worst price agreed.",
   "keywords": [
     "better price",
@@ -20,7 +20,9 @@
   ],
   "keys": [
     "om:<duty>:<order>:<n>:<op>",
-    "om:<duty>:<order>:deposit:<n>"
+    "om:<duty>:<order>:deposit:<n>",
+    "om:<duty>:<order>:withdraw:<n>",
+    "om:<duty>:<order>:home:<n>:<chain>"
   ],
   "params": {
     "type": "object",
@@ -66,9 +68,8 @@
       "WORK_MINUTES": {
         "type": "number",
         "minimum": 5,
-        "maximum": 1440,
         "default": 240,
-        "description": "How long to work the order, from when its money is on Derive. It always finishes an hour before expiry."
+        "description": "How long to work the order, from when its money is on Derive; no upper limit. It always finishes an hour before expiry."
       },
       "STEP_MINUTES": {
         "type": "number",
@@ -111,6 +112,17 @@
         "minimum": 0,
         "description": "The book's price per contract when the owner agreed: the receipt compares the average with it. Defaults to WORST_PRICE."
       },
+      "WITHDRAW_ON_FINISH": {
+        "type": "boolean",
+        "default": false,
+        "description": "true: after the receipt, its free USDC goes off Derive into its own wallet and from there into the owner's main wallet, with no card. What backs a position stays. Needs WALLET_LABEL."
+      },
+      "WALLET_LABEL": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "description": "The label its wallet was created with (`bevo-wallet create --label`): the wallet it sends home from."
+      },
       "STOP": {
         "type": "boolean",
         "default": false,
@@ -129,6 +141,7 @@
     "unreadable": "Couldn't read Derive \u00b7 retrying {next}",
     "paused_settings": "Paused: the settings need fixing",
     "stopped": "Stopped: the server refused its orders",
+    "home": "Sending unused cash home \u00b7 check {next}",
     "done": "Finished: {filled} of {size} filled"
   }
 }

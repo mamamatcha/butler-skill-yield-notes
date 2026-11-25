@@ -14,8 +14,13 @@ nothing is locked beyond it.
 
 ## The first-time check
 
-Before an owner's first bought option ever, get three plain yes answers. If any is no
-or vague, do not quote:
+A quote carrying `first_time_check` is **not offered yet**: the account holds no
+bought option (the server keeps no history, so that is the test). The whole reply is its
+`questions`, as written, each on its own line, and nothing else: no figures, no ways to buy, no question about the number.
+A yes to that message (one "yes" or "clear" to all three is enough) lets the next reply
+offer the quote; a no or a vague answer ends it. Never fold them into the offer: a yes to
+the offer, a route or the number never answers them. Once answered yes in this chat, later quotes still
+carry the field; offer those. Off Derive (no field), the same three before an owner's first bought option:
 
 - "You can lose everything you pay for this. Clear?"
 - "It only makes money if ETH ends past the breakeven on the expiry date, and it is
@@ -33,11 +38,12 @@ Butler never picks the trade. "Just buy whatever looks good", "you pick", "the b
 one": say Butler does not choose trades, and ask which asset, the most they will
 spend, and roughly when it should expire. Quote nothing until they have named an
 asset and an amount. Never make up a budget, even a small one. Monthly by default:
-weeklies lose too much to fees and the spread.
+weeklies lose too much to fees and the spread. Asked for ideas once they have named
+those, give the choices first; "the pick is yours" comes after them, never as the
+opening sentence.
 
-The helper's strike rule is a starting point, said as one, with the quote's own
-numbers: "That is a call about 5% above today's price, expiring 30 October. Nearer,
-further, or another date?" `--delta 0.3` instead of `--otm-pct` holds the odds steady
+The helper's strike rule is a starting point, said as one in the headline, with the
+quote's own numbers: "(5% above today's price)". `--delta 0.3` instead of `--otm-pct` holds the odds steady
 if they ask for that. A strike they named ("the 2100 put") is `--strike 2100`, with
 `--expiry` for the day (`YYYY-MM-DD`): never a rule that lands near it, and never a
 price read off `chain`. A quote whose `strike` or `expiry` is not what they named is not
@@ -50,51 +56,74 @@ Every number is a **field on the buy quote**. Never compute one.
 
 | In the sentence | Field |
 | --- | --- |
-| what it costs today, and the most they pay | `cost_line`, as written. The premium and fee add up to `total_cost_usd`, never to the ceiling: never put them after "at most" |
+| what it costs today, and the most they pay | `total_cost_usd` and `max_cost_usd`, in the cost bullet (§ The shape). The premium and fee add up to `total_cost_usd`, never to the ceiling: never put them after "at most" |
 | the most they can lose | the ceiling: `max_cost_usd` (the card's "You pay at most"), or the one they set (below) |
-| fees | `fee_usd`, always its own line, split when `platform_fee_usd` is above 0: "$0.65 in fees: $0.62 to Derive and $0.03 Virtuals platform fee". At 0: "$0.62 in fees, all Derive's; no Virtuals platform fee". Always the words "Virtuals platform fee", never "platform" alone, and never Butler's. The receipt after the fill says it the same way, at 0 too |
+| fees | `fee_usd`, always its own bullet, split when `platform_fee_usd` is above 0: "Fees: $0.65 ($0.62 Derive, $0.03 Virtuals platform fee), included". At 0: "Fees: $0.62, all Derive's; no Virtuals platform fee". Always the words "Virtuals platform fee", never "platform" alone, and never Butler's. The receipt after the fill says it the same way, at 0 too |
 | where it starts paying at expiry | `breakeven` |
 | the price it turns on | `strike` |
 | the date | `expiry`, its time as given, never one from memory |
 | how much | `size`, in units of the asset |
 | how good the price is | `overpay_vs_fair_vol_pts` |
-| a wide book, or one that holds less than the size | each of `warnings`, then `rfq_offer` when the quote has it, as written, before the closing question |
+| a wide book, or one that holds less than the size | each of `warnings`, a bullet each, then `rfq_offer` when the quote has it, before the closing question. On Derive, RFQ is already one of the three ways: the warning, never `rfq_offer` |
 
 ## The shape
 
-Four beats, in this order:
+Short bullets, one fact each, a few words; never a paragraph. The question on its own
+line. In this order:
 
-1. **It is a bet: today's price, the ceiling, and the most it can lose.** "This is not
-   yield. About $190.03 at today's price ($189.38 premium plus $0.65 in fees). The order
-   allows 5% for the price moving before it fills, so you pay at most $199.54; you can
-   set a different ceiling. You can lose all of what you pay."
-2. **What it pays.** "If ETH is above $2,600 on 30 October, the call pays $2.95 for
-   every dollar above that."
-3. **Breakeven and time, in one sentence.** "It only beats what you paid above about
-   $2,664, and each day ETH stands still it is worth a little less."
-4. **The date.** "It settles on 30 October at <`expiry`'s time>; you can sell it back
-   before then."
+1. **Headline**: size, option, strike (the strike rule, as one), expiry.
+2. **Cost**: `total_cost_usd` now and `max_cost_usd`, with its room said once.
+3. **Fees**: `fee_usd`, split (§ Saying it out loud).
+4. **Pays**: what it pays per dollar past the strike, and `breakeven`.
+5. **Settles**: `expiry`'s day and time; they can sell it back before then.
+6. Each of `warnings`, a bullet each.
+7. **On Derive (a quote with `worked`), three ways, numbered:**
+   - **Order book**: market (now, at the ask) or limit (a price they name: `resting.md`).
+   - **RFQ**: the makers quote; on Derive it fills only if a quote beats the book and
+     their limit (`rfq.md`). At `min_size`, add that makers may not quote one so small.
+   - **Order manager**: it rests at Derive's fair price for up to an hour and reprices
+     as the market moves; `worked.saves_up_to_usd` (`saves_up_to_pct`) as an estimate;
+     unfilled by then, it buys at the ask, never over the ceiling (`order-manager.md`).
+     With `worked.wallet_short_usd`, add that its wallet is funded from their main
+     wallet, which is that much short: "needs $X more in your main wallet".
 
-For a put, the same with "below": "If ETH is below $2,350 on 30 October, the put pays
-$3.45 for every dollar below that; it only beats its cost below about $2,295."
+   In that order, unless `worked.recommended` is true: then the order manager first,
+   marked recommended with its reason in a few words (the ask is
+   `worked.ask_over_fair_pct` above Derive's fair price). Never mark it otherwise.
+8. **The question**: `route_question` as written, always, even when the first-time
+   questions share the reply; then the yes to the number: "Which
+   route? A plain yes buys now from the order book, at the ask. You can lose up to
+   $499.56 - OK?" A yes with no route takes the way `route_question` names, the first
+   one listed: the order book at market, or the order manager when recommended. The
+   route is the one in the offer they answered: a re-quote before filing that turns
+   `recommended` the other way never changes it. Say which as it is filed. When it names none (their ceiling is under today's price), a
+   plain yes files nothing: ask which. Off Derive, the yes alone.
+
+"Not yield" is said only when they came asking for yield or income. A put's pays
+bullet reads "below": "Pays $3.45 for every $1 ETH is below $2,350 on 30 Oct; profit
+below ~$2,295."
 
 ## The ceiling
 
 `max_cost_usd` is `total_cost_usd` plus room, so a small move between the quote and
 the fill does not stop it. The order fills at the best ask up to the ceiling; if the
-price holds, they pay about `total_cost_usd`. `cost_line` says the room and that they
-can set a different ceiling: say both, once, and do not ask about it. A yes to the
+price holds, they pay about `total_cost_usd`. The cost bullet says the room and that
+they can set their own, once; do not ask about it. A yes to the
 amount is a yes to `max_cost_usd`.
 
-If they name their own ceiling ("no more than $195", "no room"), it replaces
-`max_cost_usd` everywhere: in the yes, in funding, and in `--max-cost`. Naming it is
+If they name their own ceiling ("no more than $195", "no room"), quote again with
+`--max-cost <THEIRS>`: the new `max_cost_usd` is theirs, and so is `worked.params`'s
+bound. It replaces the suggested one everywhere: in the yes, in funding, and in `--max-cost`. Naming it is
 not the yes: ask again with it, "You can lose the whole $195 - yes?", and file only
 after that yes. Never pick a different ceiling for them.
 
-- Under `total_cost_usd`: it would not fill at today's price. Say that and ask again.
+- Under `total_cost_usd`: the quote warns that buying now will not fill. Say the
+  warning; RFQ, a limit order or the order manager may still get it, never over theirs.
 - With a budget, never over `budget_usd`; for more, quote again with the new budget.
 - Less room means more no-fills. A buy that does not fill moved past their ceiling:
   re-quote and re-ask, never re-file the same ceiling.
+- Worked by the order manager, the buy carries the same ceiling (`worked.params`): it
+  starts at Derive's fair price and may pay up to it, never more.
 
 ## Words
 
@@ -115,7 +144,8 @@ The ask over Derive's own mark is what the buyer gives away crossing the spread.
   (`references/helper.md` § Safeguards).
 
 Either one, or a best ask that holds less than the size, puts `rfq_offer` on the quote:
-end the offer with it, as written (`references/helper.md`).
+end the offer with it, as written (`references/helper.md`). On Derive, the three ways
+already offer RFQ: say the warning, not `rfq_offer`.
 
 ## A hedge
 
@@ -136,14 +166,22 @@ more than the position ("sell 5 of my ETH calls" with 0.16 held), say so and ask
 "You hold 0.16 of that call, not 5. Sell all 0.16?" Never shrink the size quietly,
 and never pick between two positions for them.
 
-Quote the close with `quote --side close --instrument <name> --size <size>`. Say
-`net_proceeds_usd` against what they paid (the position's `costUsd`), plainly
-when it is less: "Selling back now gets about $178.73 after fees, against $190.03 you
-paid." Give any `warnings` as written ("fees take 16% of what the bid pays").
+Quote the close with `quote --side close --instrument <name> --size <size>`. Say, as
+bullets, `net_proceeds_usd` against what they paid (the position's `costUsd`), plainly
+when it is less, and any `warnings` as written. **Then ask for the floor**, the least
+they will take, with `min_proceeds_usd` as the suggestion:
 
-**Then ask for the floor**, the least they will take, with `min_proceeds_usd` as the
-suggestion: "The least you'd take? I'd suggest $169.79, so a small move doesn't stop
-it." File only the floor they agreed, and quote again after their answer: the card
+```text
+Sell back the $2,600 ETH call, 2.95 ETH:
+
+- Now: ~$178.73 after fees.
+- You paid $190.03.
+- Fees take 16% of what the bid pays.
+
+The least you'd take? I'd suggest $169.79, so a small move doesn't stop it.
+```
+
+File only the floor they agreed, and quote again after their answer: the card
 needs a quote under 60 seconds old.
 
 If it does not fill, nobody bought at that floor; the price moved. Say exactly that,
@@ -168,15 +206,57 @@ A bought option pays cash and buys nothing, so it is never `options-put-delivery
 
 ## Say to the owner
 
-"This is a bet, not yield. 2.95 ETH calls at $2,600: about $190.03 at today's price
-($189.38 premium plus $0.65 in fees). The order allows 5% for the price moving before
-it fills, so you pay at most **$199.54**; you can set a different ceiling. If ETH is not
-above about $2,664 on 30 October you lose all of it, and it is worth a little less each
-day ETH stands still. You can lose the whole $199.54 - yes?"
+On Derive (a $500 ETH call):
 
-A quote with a warning and `rfq_offer`, the first-time check included: both are said
-before the questions, never dropped for them. "… The best ask is only 25 contracts and
-this buy is 40, so it may fill part-way. I can also ask the market makers for a price
-instead of taking the order book (RFQ): they get 20 seconds to quote inside your limit,
-and if none does, nothing trades. Order book or RFQ? Either way, you can lose the whole
-$2,034.90 - yes?"
+```text
+5.48 ETH calls at $1,750 (5% above today's price), expiring 25 Dec:
+
+- Cost: ~$475.77 now; at most $499.56 if the price moves (you can set your own).
+- Fees: $5.59 ($3.24 Derive, $2.35 Virtuals platform fee), included.
+- Pays $5.48 for every $1 ETH is above $1,750 on 25 Dec; profit above ~$1,837.
+- Settles 25 Dec, 08:00 UTC; you can sell it back before then.
+
+Three ways to buy it on Derive:
+
+1. Order book: market (now, at the ask) or limit (your price).
+2. RFQ: I ask the market makers; it fills only if a quote beats the book and your limit.
+3. Order manager: I rest orders at Derive's fair price for up to 1 hour and reprice as
+   ETH moves. Est. $16.02 (3.4%) saved. Unfilled by then, it buys at the ask, never
+   over $499.56.
+
+Which route? A plain yes buys now from the order book, at the ask.
+You can lose up to $499.56 - OK?
+```
+
+With `worked.recommended` and a warning (a $2,500 ETH call, the ask 6% above fair):
+
+```text
+119.04 ETH calls at $2,050 (23% above today's price), expiring 25 Dec:
+
+- Cost: ~$2,380.83 now; at most $2,499.88 if the price moves (you can set your own).
+- Fees: $71.45 ($59.90 Derive, $11.55 Virtuals platform fee), included.
+- Pays $119.04 for every $1 ETH is above $2,050 on 25 Dec; profit above ~$2,070.
+- Settles 25 Dec, 08:00 UTC; you can sell it back before then.
+- Only 81.18 contracts at the best ask: buying now may fill part-way.
+
+Three ways to buy it on Derive:
+
+1. Order manager (recommended: the ask is 6% above Derive's fair price): I rest
+   orders at fair price for up to 1 hour and reprice as ETH moves. Est. $135.33 (5.9%)
+   saved. Unfilled by then, it buys at the ask, never over $2,499.88.
+2. Order book: market (now, at the ask) or limit (your price).
+3. RFQ: I ask the market makers; it fills only if a quote beats the book and your limit.
+
+Which route? A plain yes starts the order manager.
+You can lose up to $2,499.88 - OK?
+```
+
+On Paradex, a warning and `rfq_offer`:
+
+```text
+- …
+- Only 25 contracts at the best ask: buying now may fill part-way.
+
+Order book or RFQ (the makers get 20 seconds to quote inside your limit)?
+You can lose up to $2,034.90 - OK?
+```

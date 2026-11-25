@@ -1,5 +1,95 @@
 # Changelog
 
+## 2.18.4
+
+- **Every Derive buy offers three ways: the order book, RFQ and the order manager.** Seen
+  in a live chat (24 Nov): asked to buy a $500 ETH put "via the order manager", Butler
+  said it could save "$2.03 at best", $0 on the other two strikes, then $2.71 for the
+  same put a few minutes later. `order-manager.md` offered it only when asked, and RFQ
+  only for a wide or thin book. A Derive buy offer now ends with three ways: the order
+  book (market or limit), RFQ, and the order manager with what it could save. The order
+  manager goes first, marked recommended, when the buy quote's new
+  `worked.recommended` is true: a premium of $1,000 or more with the ask 5% or more over
+  Derive's mark (`worked.ask_over_fair_pct`). Live on 25 Nov, the median near-the-money
+  ETH and BTC ask (delta 0.1-0.6, 76 options) was about 3% over the mark; 29% were over
+  5%. On a Derive buy RFQ is always one of the three, so `rfq_offer` is not said again;
+  a yes with no pick takes the first one listed. A sale or close is still worked only
+  when asked.
+- **Offers are short bullets, not paragraphs.** The same chat's offers ran to 200 words
+  of prose. SKILL.md § Say to the owner now says: short bullets, a few words each, the
+  question on its own line, every figure kept. `buying.md` § The shape is a bullet
+  template (headline; cost and ceiling; fees; pays and breakeven; settles; warnings; the
+  three ways; one question for the route and the yes to the number), and so is
+  `selling.md` § The shape (the bad case still first, the ownership question on its own
+  line). The examples are bullets: buy and sell back (`buying.md`), sell and buy back
+  (`selling.md`), the account check and withdrawals (`account.md`), `order-manager.md`,
+  `rfq.md` and `resting.md`; a check lists each position's `summary` as a bullet. A Derive buy
+  says the order manager's wallet and card when it is filed, not in the offer. "Not
+  yield" is said only to someone who asked for yield; the time-decay line is left to the
+  first-time check.
+- **The saving counts the fee.** `worked.at_mark_saves_usd` was the price to the mark
+  alone, so a book already at the mark said $0. A resting fill pays Derive's maker fee
+  (0.01% of the index) instead of the taker fee (0.03% plus a $0.50 base), and on
+  cheap options that is most of the saving. `worked` adds `saves_up_to_usd` and
+  `saves_up_to_pct` (price `price_saves_usd` plus fee `fee_saves_usd`); a bid already
+  past the mark caps the price a tick above it, and a close, which cannot rest, saves no
+  fee. Live, 24 Nov, $500 each: the ETH 4 Dec $1,600 put $0 -> $5.25 (1.1%); the
+  $1,500 put $0 -> $9.73 (2.1%); the ETH 25 Dec $2,000 call $28.58 -> $28.24 (6.1%),
+  its bid above the mark. `at_mark_saves_usd` stays, unused by the offer.
+- **A worked buy carries the ordinary buy's ceiling.** `WORST_PRICE` was today's ask
+  exactly, so a worked buy could fail where a buy now would fill (the same chat: a
+  4-hour run that bought nothing). It is now `max_cost_usd` per contract on Derive's
+  tick, with `FEE_USD` at that price and `FILL_NOW_PRICE` today's ask for the receipt;
+  `fund_usdc` covers it. The ladder still starts at the mark and walks toward the live
+  ask. At the deadline the makers must beat the book and the book fills at its live
+  ask; the ceiling only bounds a market that moved, as it does a buy now.
+- **The owner's own ceiling bounds the order manager too.** `order-manager.md` said to
+  set `WORST_PRICE` to today's ask for a lower ceiling of their own, which pays over it
+  when that ceiling is under today's total ("at most $470" on a $475.77 quote).
+  `quote.py quote --side buy` takes `--max-cost <THEIRS>` (never over `--budget`):
+  `max_cost_usd`, `worked.params` and `fund_usdc` are then theirs, the bound may sit
+  under the ask, and one under today's total warns that buying now will not fill.
+- **The offer says what a plain yes picks.** A Derive buy quote carries `route_question`
+  ("Which route? A plain yes buys now from the order book, at the ask.", or "... starts
+  the order manager." when recommended), said as written before "You can lose up to $X
+  - OK?". Under an owner's ceiling below today's total it names none and asks for a pick.
+  The route is the one in the offer they answered: in the eval, the ask slid from 7% to
+  4.5% over the mark between offer and yes, and the re-quote before filing sent 7 of 10
+  plain yeses to the book after "a plain yes starts the order manager".
+- **The order manager is never recommended when the main wallet cannot fund it.** Its
+  wallet is funded from the main wallet, not the Derive balance. In the eval, an owner
+  with $3,000 on Derive and $61.81 in the wallet was told "a plain yes starts the order
+  manager", and Butler then switched to the book. A Derive buy quote reads `bevo-read
+  assets` itself: `worked.wallet_cash_usd`, and `wallet_short_usd` when it is under
+  `fund_usdc`, which turns `recommended` off (so a plain yes buys from the book). The
+  offer says how much more the main wallet needs.
+- **The first-time questions are asked on their own, before the offer.** In the eval
+  (83 filed trials), Butler folded them into the offer as statements or one "Clear on
+  all three?" in 46, and one "yes" to the route or the number then filed the trade; in
+  12 they were never said. The server keeps no trade history, so Butler was also
+  guessing whether it was a first time. A Derive buy or put-sale quote now carries
+  `first_time_check` (its three questions) when the account holds no bought option
+  (buy) or sold put (sell); the reply is those questions alone, and the offer follows
+  their yes.
+- **A worked buy is quick by default, and said as it runs.** 60 minutes for a buy
+  (240 for a sale or close): each 1% the market moves while it waits is worth $50-140
+  on a $500 option, against a saving of $5-10. There is no longest run: "until I
+  cancel" runs to an hour before expiry, with the risk of waiting said. The same chat
+  promised "no forced buy at the end", which is not what the duty does. A change while it runs is said from
+  `duty_show`, and the deadline is said as it is: it takes the book inside the ceiling.
+- **Money left in an earlier order's wallet is found and said.** Before a new order
+  wallet, the finished order-manager duties' wallets are read, and free USDC there is
+  offered home (an `@1` duty's, or under $3).
+- **`options-order-manager@2`: what it did not use comes home, and the receipt says the
+  saving in percent.** With `WITHDRAW_ON_FINISH` and `WALLET_LABEL` (always filed), after
+  the receipt it takes its free USDC off Derive into its own wallet and sends it to the
+  main wallet with no card, as a program duty's `--withdraw-on-finish` does; under $3
+  stays (Derive keeps about $1 a withdrawal), and so does what backs a position.
+  `WORK_MINUTES` has no maximum (it was 1,440); it still ends an hour before expiry. The
+  receipt reads "about $9.35 (9.9%) better in all, fees included".
+- **Ideas come before "the pick is yours".** `buying.md`: asked for ideas, the choices
+  come first and the not-advice line after them, never as the opening sentence.
+
 ## 2.18.3
 
 - **Auto-roll is pitched first to an owner who wants steady income.** Seen on a live

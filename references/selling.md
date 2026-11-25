@@ -33,8 +33,13 @@ and keeping the fee. The premium is certain. What they own at expiry is not.
 
 ## The first-time check
 
-Before an owner's first note ever, get three plain yes answers. If any is no or
-vague, do not quote:
+A quote carrying `first_time_check` is **not offered yet**: the account holds no
+sold put (the server keeps no history, so that is the test). The whole reply is its
+`questions`, as written, each on its own line, and nothing else: no figures, no ownership question.
+A yes to that message (one "yes" or "clear" to all three is enough) lets the next reply
+offer the quote; a no or a vague answer ends it. Never fold them into the offer: a yes to
+the offer or the ownership question never answers them. Once answered yes in this chat, later quotes still
+carry the field; offer those. Off Derive (no field), the same three before an owner's first note:
 
 - "If ETH falls hard, you end up paying the strike for it, at a loss. Clear?"
 - "Your money is locked until the expiry date. Getting out early means buying the
@@ -61,28 +66,27 @@ model. If a sentence needs a number the quote does not carry, the sentence is wr
 | the date | `expiry` |
 | how much of the asset | `size` |
 | what is locked | `collateral.amount` (`collateral.usd` in dollars) |
-| fees | `fee_usd`, always its own line, split when `platform_fee_usd` is above 0: "$0.65 in fees: $0.62 to Derive and $0.03 Virtuals platform fee". At 0: "$0.62 in fees, all Derive's; no Virtuals platform fee". Always the words "Virtuals platform fee", never "platform" alone, and never Butler's. The receipt after the fill says it the same way, at 0 too |
+| fees | `fee_usd`, always its own bullet, split when `platform_fee_usd` is above 0: "Fees: $0.65 ($0.62 Derive, $0.03 Virtuals platform fee)". At 0: "Fees: $0.62, all Derive's; no Virtuals platform fee". Always the words "Virtuals platform fee", never "platform" alone, and never Butler's. The receipt after the fill says it the same way, at 0 too |
 | how good the price is | `edge_vs_fair_vol_pts` |
-| a wide book, or one that holds less than the size | each of `warnings`, then `rfq_offer` when the quote has it, as written, after the four beats and before the ownership question |
+| a wide book, or one that holds less than the size | each of `warnings`, a bullet each, then `rfq_offer` when the quote has it, after the other bullets and before the ownership question |
 
 ## The shape
 
-Four beats, in this order. The bad case comes first, with a dollar figure from
-`bad_case`, before any premium, APR or fee is said.
+Short bullets, one fact each, a few words; never a paragraph (SKILL.md § Say to the
+owner). The bad case comes first, with a dollar figure from `bad_case`, before any
+premium, APR or fee:
 
-1. **The bad case.** "If ETH falls 25% to $1,844 by 30 October, you still pay $2,200
-   each for 0.13 ETH, and you are down about $44, even after the premium."
-2. **The money, and the date.** "In return you are paid $2.12 now, after a $0.60
-   fee, and it is yours whatever happens."
-3. **The good case.** "If ETH is above $2,200 on 30 October, you keep the $2.12 and
-   your $286 is free again."
-4. **What is locked.** "Your $286 cannot be touched until 30 October."
+1. **Headline**: the put: asset, strike, size, expiry.
+2. **Bad case**: the fall (`bad_case`), paying the strike, down `loss_usd` after the premium.
+3. **Paid now**: `net_premium_usd`, after fees, theirs whatever happens.
+4. **Fees**: `fee_usd`, split (§ Saying a note out loud).
+5. **Good case**: above the strike at expiry, they keep it and the collateral is free.
+6. **Locked**: `collateral.usd` until `expiry`.
+7. `apr_pct` if said at all, with its condition (below); each of `warnings`; `rfq_offer`.
 
-`apr_pct`, if said at all, comes after all four, with its condition (below).
-
-Then the ownership question, **on its own**, in the asset's terms, after the offer
-and before any card: "Happy to own 0.13 ETH at $2,200 on 30 October?" A yes to the
-yield is not a yes to this; never fold it into "shall I go ahead?".
+Then the ownership question, **on its own line**, in the asset's terms, after the offer
+and before any card: "Happy to own 0.13 ETH at $2,200 on 30 Oct?" A yes to the yield is
+not a yes to this; never fold it into "shall I go ahead?".
 
 ## A no to owning it
 
@@ -176,11 +180,10 @@ Buying it back ends it before expiry and frees its collateral. Quote it with
 --premium-received <USD>`, where the premium is the open's `netPremiumUsd` (or the
 position's `costUsd`) scaled to the size being bought back.
 
-Say `total_cost_usd`, then `result_usd`, plainly when it is negative: "Buying it back
-now costs about $4.46 with fees. You were paid $3.00 for it, so you would take a $1.46
-loss now." Give any `warnings` as written. Then say what waiting does: holding to
-expiry costs nothing to do, and the note may still expire worthless. Then ask for the
-ceiling, the most they will pay, with `max_cost_usd` as the suggestion; file only the
+Say, as bullets: `total_cost_usd`; `result_usd`, plainly when it is negative; any
+`warnings` as written; and that waiting costs nothing, and the note may still expire
+worthless (§ Say to the owner). Then ask for the ceiling, the most they will pay, with
+`max_cost_usd` as the suggestion; file only the
 ceiling they agreed, quote again after their answer, and never raise it without
 asking. The size is at most what they sold (the negative `size`, as a positive
 number); asked for more, say what they hold and ask.
@@ -210,17 +213,45 @@ spread, and the quote warns when fees pass 15% of it. Auto-roll is weekly by des
 
 ## Say to the owner
 
-"If ETH falls 25% to $1,844 by 30 October, you still pay $2,200 each for 0.13 ETH and
-are down about $44, even after the premium. In return you are paid **$2.12** now, after
-a $0.60 fee. If ETH is above $2,200 then, you keep it and your $286 is free again;
-until then it is locked." Then, on its own: "Happy to own 0.13 ETH at $2,200 on 30
-October?"
+```text
+Sell the $2,200 ETH put, 0.13 ETH, expiring 30 Oct:
 
-A no to that, and nothing after it: "Then a put is not for this money - every one is a
+- Bad case: if ETH falls 25% to $1,844, you still pay $2,200 each; down ~$44 after the premium.
+- Paid now: $2.12 after fees, yours whatever happens.
+- Fees: $0.60 ($0.57 Derive, $0.03 Virtuals platform fee).
+- Good case: ETH above $2,200 on 30 Oct, you keep $2.12 and your $286 is free.
+- Locked: $286 until 30 Oct.
+
+Happy to own 0.13 ETH at $2,200 on 30 Oct?
+```
+
+A no to that, and nothing after it: "Then a put isn't for this money: every one is a
 promise to buy. I won't file anything."
 
-A wide market: "You can sell it, but the spread is wide today: selling here hands over
-16% of the option's value. Still want it?"
+A wide market, a bullet before the question:
 
-A safeguard: "Butler has a safeguard here: selling now hands over 28% of the option's
-value to the spread. Still want to go ahead, and happy to own it at that price?"
+```text
+- Wide spread today: selling here hands over 16% of the option's value.
+
+Still want it?
+```
+
+A safeguard:
+
+```text
+- Safeguard: selling now hands over 28% of the option's value to the spread.
+
+Go ahead anyway, and happy to own it at that price?
+```
+
+Buying back:
+
+```text
+Buy back the $2,200 ETH put, 0.13 ETH:
+
+- Cost now: ~$4.46 with fees.
+- You were paid $3.00: a $1.46 loss now.
+- Waiting costs nothing; it may still expire worthless.
+
+The most you'd pay? I'd suggest $4.68.
+```

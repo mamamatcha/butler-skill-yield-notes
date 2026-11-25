@@ -36,8 +36,8 @@ back to `bevo-read assets`, and never report an unreadable account as empty.
 
 ## A check
 
-Answer from the fields above and stop: free USDC first, then each position's `summary`,
-as written. Asked whether they are up or down: each position's `pnlUsd` as written; that
+Answer from the fields above and stop, as bullets: free USDC first, then each
+position's `summary`, as written, a bullet each. Asked whether they are up or down: each position's `pnlUsd` as written; that
 is at mark, while a close quote says what selling back now would fetch, a different
 question. Never work out a value, cost, profit or date yourself; each is a field. On an
 older server with no `summary`, give each size in the asset ("0.16 ETH") and any `mark`
@@ -134,19 +134,46 @@ A duty built with `--withdraw-on-finish` does all of this itself on `STOP`
 
 ## Say to the owner
 
-Check: "On Derive you have $1.62 free USDC. Bought 0.16 ETH of the $2,700 call expiring 23
-Oct 2026 (in 10 days), paid $5.49, worth $3.31 at mark, down $2.18; …"
+Bullets, a few words each (SKILL.md § Say to the owner).
 
-Nothing free: "All $250 on Derive is backing your ETH put until it settles on 30 October.
-Buying it back would free it now."
+Check:
 
-Moved first: "To buy the SOL call, $45 moved from your main Derive account into a new SOL
-account. Bought 0.5 SOL-20261106-116-C for $5.63."
+```text
+On Derive:
 
-A duty's wallet: "Taking $<amount> out of Derive into the order's own wallet first: Derive
-keeps about $1 of it, and it lands in 10 to 30 minutes. Then a second card sends it to
-your main wallet."
+- Free USDC: $1.62.
+- Bought 0.16 ETH of the $2,700 call expiring 23 Oct 2026 (in 10 days), paid $5.49, worth $3.31 at mark, down $2.18.
+- …
+```
 
-Withdraw: "Withdrawing $<amount> from Derive: it reaches your wallet on Ethereum in <the
-card's window>, less Derive's fee, which it does not say in advance and can be most of a
-small amount."
+Nothing free:
+
+```text
+- All $250 on Derive backs your ETH put until it settles on 30 Oct.
+- Buying it back would free it now.
+```
+
+Moved first:
+
+```text
+- Moved $45 from your main Derive account into a new SOL account.
+- Bought 0.5 SOL-20261106-116-C for $5.63.
+```
+
+A duty's wallet:
+
+```text
+Bringing $<amount> home, two cards:
+
+- First: out of Derive into the order's own wallet. Derive keeps ~$1; it lands in 10-30 min.
+- Then: from that wallet to your main wallet.
+```
+
+Withdraw:
+
+```text
+Withdrawing $<amount> from Derive:
+
+- Reaches your wallet on Ethereum in <the card's window>.
+- Less Derive's fee, not said in advance; it can be most of a small amount.
+```

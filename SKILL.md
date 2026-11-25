@@ -1,7 +1,7 @@
 ---
 name: options-trading
 description: Trade options on Derive, Paradex or Rysk - earn on idle USDC by selling cash-secured puts, buy a call or a put, close before expiry, and check or withdraw USDC and positions.
-version: 2.18.3
+version: 2.18.4
 metadata: {"butler":{"moneyMoving":true,"keywords":["yield","earn on my usdc","make my money work","idle cash","options income","cash secured put","sell options","sell a put","premium","get paid to wait","buy the dip","yield note","options","buy a call","buy a put","call option","put option","hedge","protect my eth","upside","bet on eth","close my option","sell my option back","buy back my put","close my note","exit my put","get my collateral back","withdraw","withdraw my usdc","derive","my options","options account","options positions","free usdc","derive positions","my option positions","withdraw from derive","withdraw my free usdc","paradex","paradex options","paradex positions","rysk","rysk options","rysk positions","physically settled","hyperevm","limit order","resting order","at my price","or better","leave it on the book","cancel my order","options duty","automate options","options strategy","better price","work the order","auto-roll","auto roll","roll my puts","sell a put every week","steady yield","steady income","passive income","regular income"],"requires":{"bins":["python3","bevo-read","acp","bevo-wallet"]}}}
 ---
 
@@ -20,7 +20,7 @@ Your owner wants Derive, Paradex or Rysk options:
   **bought**; "get out of my put", "free my collateral" **buys back** a note they
   **sold**.
 - **At their price** - "or better", "cancel my order": `resting.md`.
-- **A better price, given time** - "work the order": `order-manager.md`.
+- **A Derive buy: book, RFQ or order manager** (`buying.md` § The shape); "work the order": `order-manager.md`.
 - **Look or withdraw** - "my free USDC in Derive" (`freeForNewPutsUsd`, not wallet
   cash), "my positions": steps 1 and 9, then stop. "Withdraw my free USDC": step 8, never an
   `acp trade` (`account.md`). Listing: `listing.md`.
@@ -41,8 +41,8 @@ Not this skill: covered calls, spreads or leverage.
    `min_size` is only its minimum.
 4. **The bad case first, in their words, before any upside number:** selling, from
    `bad_case`; buying, that what it costs is gone.
-5. **First time for that kind of trade:** the plain yes answers in
-   `selling.md` or `buying.md`. A no or a vague answer stops it.
+5. **First time:** a quote with `first_time_check`: its questions alone,
+   the offer after their yes (`buying.md`, `selling.md`). A no stops it.
 6. **Figures come only from this turn's reads:** sizes, prices and positions
    from `acp options account` and quotes, never memory; fix a note that
    disagrees. `bevo-read assets` has none.
@@ -100,7 +100,7 @@ this chat. One missing: ask, and file nothing this turn.
      `expiry`; `apr_pct` last. Then, on its own: *"Happy to own 0.13 ETH at $2,200 on
      30 October?"* A no or a vague answer ends it: no other strike, tenor or asset.
      Butler buys the asset later only if they ask now.
-   - **Buy:** not yield; `cost_line` as written; the ceiling is all they can lose;
+   - **Buy:** bullets (`buying.md` § The shape); the ceiling is all they can lose;
      `breakeven` is where it pays at expiry. Get an explicit yes to *"you can lose the whole $199.54"*.
    - **Close (sell back):** `net_proceeds_usd` now, against what they paid (the
      position's `costUsd`). Ask the floor (`min_proceeds_usd` suggested).
@@ -216,4 +216,5 @@ failed: re-read the account and wait. Look up `:home` with `--route trade`.
 
 ## Say to the owner
 
-In each reference.
+In each reference. Always short bullets, a few words each, never a paragraph; the
+question on its own line. Keep every figure asked for; cut the rest.
