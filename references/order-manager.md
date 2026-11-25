@@ -1,7 +1,7 @@
 # A worked order: a better price than the book, given time
 
 An ordinary open or buy takes the book now: a seller gets the bid, a buyer pays the ask.
-The `options-order-manager@1` duty **works** the same trade instead: it asks Derive's
+The `options-order-manager@2` duty **works** the same trade instead: it asks Derive's
 market makers, rests an order at Derive's own mark, and gives ground toward the book
 step by step, never past the price the owner agreed. Most orders a maker will take fill
 in the first minute; the rest wait, and may not fill at all.
@@ -17,8 +17,8 @@ is worked only when they ask ("get me a better price", "work the order", "no rus
 
 1. **It trades from a wallet of its own.** The money leaves their main wallet on one
    funding card, and from then on the duty trades with no further approval, inside the
-   ceiling they agreed. What it does not spend waits in that wallet's Derive account
-   until they ask to bring it home (§ Afterwards).
+   ceiling they agreed. What it does not spend comes back to their main wallet on its
+   own after the receipt, with no card; what it bought stays in that wallet's account.
 2. **How it ends.** It starts at Derive's fair price and moves toward today's price. If
    nothing fills by the deadline, it takes the book, as long as the price is still
    inside their ceiling; past it, nothing is bought. Never say "if no one sells for
@@ -42,10 +42,10 @@ The figure is live. A re-quote that changes it is said with why ("the price move
 ## How long
 
 `WORK_MINUTES` is theirs. None named: **60 for a buy**, 240 for a sale or a close; 15 for
-"quick". The longest is 1,440 (24 hours). "Until I cancel", "as long as it takes": say
-24 hours is the longest, and that the longer a buy waits, the more likely it misses the
-move they are betting on: the option gets dearer as the market moves their way. Never
-promise a run past 24 hours, or no buy at the end: the deadline always tries the book
+"quick". There is no longest: it always ends an hour before expiry. "Until I cancel", "as
+long as it takes": the minutes to expiry, and say that the longer a buy waits, the more
+likely it misses the move they are betting on: the option gets dearer as the market
+moves their way. Never promise no buy at the end: the deadline always tries the book
 inside the ceiling.
 
 ## Filing it
@@ -65,7 +65,8 @@ inside the ceiling.
    `max_cost_usd`. A lower ceiling of their own: set `WORST_PRICE` to `FILL_NOW_PRICE`
    (today's price), which stays inside it. Get a yes.
 3. **Money left from an earlier one.** Before a new wallet, `duty_list`: each finished
-   `options-order-manager@1` duty names its `walletId`. `bevo-read get
+   `options-order-manager` duty names its `walletId` (`@2` sends home all but under $3;
+   `@1` sends nothing). `bevo-read get
    '/options/account?venue=derive&walletId=<LABEL>'` on each: free USDC there
    (`freeForNewPutsUsd`) is said once ("$486 is still in the wallet from your last
    order") with the offer to bring it home, never left unsaid.
@@ -76,10 +77,11 @@ inside the ceiling.
    ```
 
    ```json
-   {"recipe": "options-order-manager@1", "movesFunds": true, "title": "Work {INSTRUMENT} for a better price",
+   {"recipe": "options-order-manager@2", "movesFunds": true, "title": "Work {INSTRUMENT} for a better price",
     "walletId": "<LABEL>", "fundUsdc": <worked.fund_usdc>,
     "triggers": [{"kind": "timer", "intervalSeconds": 60}],
-    "params": {<worked.params>, "WORK_MINUTES": <minutes>}}
+    "params": {<worked.params>, "WORK_MINUTES": <minutes>,
+               "WITHDRAW_ON_FINISH": true, "WALLET_LABEL": "<LABEL>"}}
    ```
 
    One wallet per worked order, never one that holds money or serves another duty.
@@ -87,9 +89,10 @@ inside the ceiling.
    the chat. Make sure SKILL.md step 9's `options-lifecycle` duty exists: it watches
    what this wallet's account holds to expiry, as it does every other option.
 5. The duty tells the owner when it starts, on each part fill, and at the end with a
-   receipt: the average price, what that saved against the book, and where each fill
-   came from. Then it finishes. Never poll it; `duty_show` and `duty_logs` when they
-   ask how it is going.
+   receipt: the average price, what that saved against the book in dollars and percent,
+   and where each fill came from. Then it sends its free USDC home (Derive keeps about
+   $1; under $3 stays), says how much went back, and finishes. Never poll it; `duty_show`
+   and `duty_logs` when they ask how it is going.
 
 **A change while it runs** ("give it longer", "keep going"): `duty_update` its params,
 every other setting unchanged, then `duty_show`, and say only what the updated settings
@@ -112,9 +115,10 @@ the duty's own chat).
 - **Close what it holds:** quote the close (step 2); to work it, `duty_update` the same
   duty with that quote's `worked.params` (a new order; a close is worked by the makers
   and the book only). To close now: step 5's `acp options close … --wallet <LABEL>`, a card.
-- **Bring the money home:** `account.md` § A duty's own wallet: out of Derive into this
-  wallet, then into the main wallet, a card each. After the receipt, offer it for what
-  was not spent. `duty_delete` is refused until then.
+- **Bring the money home:** the duty does it after the receipt. For what it left (an `@1`
+  duty, under $3, or a sold put's collateral once it settles): `account.md` § A duty's
+  own wallet, out of Derive into this wallet, then into the main wallet, a card each.
+  `duty_delete` is refused until then.
 - At expiry Derive settles in cash into that same account; the lifecycle duty gives
   the heads-up and the outcome, naming this wallet.
 
@@ -129,7 +133,7 @@ If no one sells to it by then, it buys at the asking price, as long as that is s
 under your ceiling.
 
 It trades from a wallet of its own: approve one $502 card and it needs no more
-approvals. What it doesn't spend waits there until you ask me to bring it home.
+approvals. What it doesn't spend comes back to your main wallet when it's done.
 
 Or I can buy it now. Either way, you can lose the whole $499.74 - yes?"
 

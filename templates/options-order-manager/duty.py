@@ -41,11 +41,15 @@ cannot, and a paused duty cannot. So it never finishes with one resting, it canc
 order in its account that is not the one it is working, and STOP ends an order early:
 it cancels what rests and sends the receipt for what filled.
 
-It finishes with the receipt. What it bought or sold stays in its wallet's account, where
-the owner's `options-lifecycle` duty watches it to expiry with every other option.
+It sends the receipt, and with WITHDRAW_ON_FINISH it then sends what it did not use home:
+its free USDC off Derive into its own wallet, and from there into the owner's main wallet,
+with no card. What it bought or sold stays in its wallet's account (and a sold put's
+collateral with it), where the owner's `options-lifecycle` duty watches it to expiry with
+every other option.
 
 Settings: INSTRUMENT, ACTION, SIZE, WORST_PRICE, FEE_USD, WORK_MINUTES, STEP_MINUTES,
-TAKE_SAVING, SIZE_STEP, MIN_SIZE, TICK_SIZE, MAKER_FEE_RATE, FILL_NOW_PRICE, STOP.
+TAKE_SAVING, SIZE_STEP, MIN_SIZE, TICK_SIZE, MAKER_FEE_RATE, FILL_NOW_PRICE,
+WITHDRAW_ON_FINISH, WALLET_LABEL, STOP.
 """
 
 import bevo
@@ -79,6 +83,9 @@ TICK = float(PARAMS.get("TICK_SIZE") or 0.1)
 MAKER_FEE_RATE = float(PARAMS["MAKER_FEE_RATE"]) if PARAMS.get("MAKER_FEE_RATE") is not None else 0.0001
 FILL_NOW = float(PARAMS.get("FILL_NOW_PRICE") or WORST)
 STOP = PARAMS.get("STOP") is True or str(PARAMS.get("STOP") or "").strip().lower() == "true"
+WITHDRAW = (PARAMS.get("WITHDRAW_ON_FINISH") is True
+            or str(PARAMS.get("WITHDRAW_ON_FINISH") or "").strip().lower() == "true")
+LABEL = str(PARAMS.get("WALLET_LABEL") or "").strip()
 
 #: Derive's base fee, charged once per order whatever its size; FEE_USD is the
 #: fill-now quote's whole fee, so the rest of it scales with size.
@@ -107,6 +114,11 @@ CHAIN_SECONDS = 40
 #: Below this the venue takes no deposit, so it stays in the wallet.
 MIN_DEPOSIT_USD = 10
 DEPOSIT_WAIT = 600
+#: Derive keeps about $1 of each withdrawal, so less free than this stays on Derive.
+HOME_MIN_USD = 3
+DERIVE_WITHDRAW_FEE_USD = 1
+#: How long a Derive withdrawal may take to reach the duty's wallet on Ethereum.
+HOME_WAIT = 24 * 3600
 UNFUNDED_AFTER = 1800
 #: Refusals that no later minute can fix: the duty stops and says why.
 FATAL = {"OPTIONS_DUTY_OFF", "OPTIONS_DUTY_NO_WALLET", "OPTIONS_VENUE_NOT_DUTY",
@@ -154,6 +166,8 @@ def problem():
         return "FEE_USD, STEP_MINUTES or WORK_MINUTES is out of range"
     if not 0 <= TAKE_SAVING <= 1:
         return "TAKE_SAVING must be between 0 and 1"
+    if WITHDRAW and not LABEL:
+        return "WITHDRAW_ON_FINISH needs WALLET_LABEL, the label its wallet was created with"
     if expiry() - EXPIRY_MARGIN <= time.time():
         return "%s expires within the hour" % INSTRUMENT
     return ""
@@ -597,12 +611,175 @@ def finish(account, why=""):
                     money(abs(better)), "better" if better >= 0 else "worse", money(FILL_NOW))
                 # Filling at once is one taker order for all of it; count the fees each way.
                 net = better * done + fee(done) - float(S.get("fees_usd") or 0)
-                line += "; about %s %s in all, fees included" % (money(abs(net)), "better" if net >= 0 else "worse")
+                pct = abs(net) / (FILL_NOW * done) * 100
+                line += "; about %s (%.1f%%) %s in all, fees included" % (
+                    money(abs(net)), pct, "better" if net >= 0 else "worse")
             line += "." + filled_by()
         if why:
             line += " Stopped: %s." % why
-    bevo.status("done", filled=units(done), size=units(SIZE))
-    bevo.done(line)
+    if not WITHDRAW:
+        bevo.status("done", filled=units(done), size=units(SIZE))
+        bevo.done(line)
+    S["receipt"], S["home"], S["filled_at_end"] = line, "settle", units(done)
+    bevo.notify(line + " Next it sends what it did not use back to your main wallet.")
+    raise Homeward()
+
+
+class Homeward(Exception):
+    """The order is over but its money is not home yet: this run stops here, and every
+    later run goes straight to go_home()."""
+
+
+def wallet_cash():
+    try:
+        return bevo.balance().cash_usd
+    except bevo.BevoError:
+        return None
+
+
+def wallet_json(*args, timeout=170):
+    """A `bevo-wallet` command's JSON answer; None when it could not be read."""
+    try:
+        run = subprocess.run(["bevo-wallet", *args], capture_output=True, text=True, timeout=timeout,
+                             check=False, env={**os.environ, "BUTLER_OUTPUT": "json"})
+        answer = json.loads(run.stdout or "null")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+    return answer if isinstance(answer, dict) else None
+
+
+def wallet_usdc():
+    """Its own wallet's USDC on each chain, {chain id: amount}, read fresh; None when unread."""
+    answer = wallet_json("list", "--fresh", timeout=60)
+    for row in (answer or {}).get("wallets") or []:
+        if row.get("label") != LABEL or row.get("status") == "archived":
+            continue
+        if not isinstance(row.get("balances"), list):
+            return None
+        usdc = {}
+        for b in row["balances"]:
+            if str(b.get("symbol") or "").upper() != "USDC" or b.get("chainId") is None:
+                continue
+            if b.get("amount") is None:
+                return None
+            usdc[int(b["chainId"])] = usdc.get(int(b["chainId"]), 0.0) + float(b["amount"])
+        return usdc
+    return None
+
+
+def wallet_home(n):
+    """Its USDC into the owner's main wallet: one `bevo-wallet withdraw --amount` per chain
+    holding $1 or more. No `--to` pays the owner's own wallet on that chain, and from the
+    duty's own session that runs without a card (`--all` always asks one).
+    ("sent", dollars), ("asked", dollars) when the server filed a card instead, or (None, 0)."""
+    usdc = wallet_usdc()
+    if usdc is None:
+        return None, 0
+    total, asked = 0.0, False
+    for chain, held_usd in sorted(usdc.items()):
+        amount = math.floor(held_usd * 100) / 100
+        if amount < 1:
+            continue
+        answer = wallet_json("withdraw", "--wallet", LABEL, "--amount", "%.2f" % amount, "--token", "usdc",
+                             "--chain-id", str(chain),
+                             "--idempotency-key", bevo.key("om", bevo.SERVICE_ID, ORDER_TAG, "home", n, chain))
+        if not (answer or {}).get("ok"):
+            return None, 0
+        total, asked = total + amount, asked or bool(answer.get("asked"))
+    return ("asked" if asked else "sent"), total
+
+
+def done_home(text):
+    bevo.status("done", filled=S.get("filled_at_end") or "0", size=units(SIZE))
+    bevo.done("%s: %s" % (NAME, text))
+
+
+def go_home(account, now):
+    """After the receipt: its free USDC off Derive into its own wallet, then from there into
+    the main wallet. What backs a position, a sold put's collateral, stays until it settles."""
+    phase = S.get("home")
+    free = float(account.get("freeForNewPutsUsd") or 0) if account.get("exists") else 0.0
+    if phase == "settle":
+        if free < HOME_MIN_USD:
+            if not S.get("wtotal"):
+                done_home("nothing to send home; under %s is free on Derive, less than its "
+                          "withdrawal fee is worth." % money(HOME_MIN_USD))
+            S["home"], S["home_from"] = "landing", now
+            phase = "landing"
+        elif now >= float(S.get("wretry_at") or 0):
+            # A cent under the figure read, and 0.5% less for each "only $N is free" refusal.
+            cut = 1 - 0.005 * min(int(S.get("wrefusals") or 0), 10)
+            amount = math.floor((free - 0.01) * cut * 100) / 100
+            n = int(S.get("withdrawals") or 0)
+            if "wbase" not in S:
+                S["wbase"] = wallet_cash() or 0.0
+            S.update(wkey=bevo.key("om", bevo.SERVICE_ID, ORDER_TAG, "withdraw", n), withdrawals=n + 1,
+                     home="withdrawing", wamount=amount, wsent_at=now)
+            acp(S["wkey"], "withdraw", "--amount", "%.2f" % amount)
+            phase = "withdrawing"
+        else:
+            bevo.status("home")
+            return
+    if phase == "withdrawing":
+        fate = bevo.settled(S["wkey"], route="options", wait=45)
+        if fate in ("waiting", "approval"):
+            bevo.status("home")
+            return
+        if fate == "executed" or (fate == "unknown" and free < HOME_MIN_USD):
+            S["wtotal"] = float(S.get("wtotal") or 0) + float(S["wamount"])
+            S["wrefusals"] = 0
+            S["home"], S["home_from"] = "landing", now
+        elif fate == "dropped":
+            _, code, said = ledger(S["wkey"])
+            if "free" in said.lower():
+                S["wrefusals"] = int(S.get("wrefusals") or 0) + 1
+            say("withdraw: refused (%s); trying again in five minutes" % (code or said or "refused"))
+            S["home"], S["wretry_at"] = "settle", now + 300
+            bevo.status("home")
+            return
+        else:
+            # Unclear, and the money is still on Derive: an hour, then a new try. Derive pays
+            # out no more than is free, and only to this wallet.
+            if now - float(S["wsent_at"]) >= 3600:
+                S["home"] = "settle"
+            bevo.status("home")
+            return
+    cash = wallet_cash()
+    if S.get("homes") and cash is not None and cash < 1:  # an earlier send went through after all
+        done_home("%s went back to your main wallet." % money(S.get("home_cash") or 0))
+    waited = now - float(S.get("home_from") or now)
+    want = float(S.get("wbase") or 0) + 0.9 * (float(S.get("wtotal") or 0) - DERIVE_WITHDRAW_FEE_USD)
+    if waited < HOME_WAIT and (cash is None or cash < want):
+        bevo.status("home")
+        return
+    if now < float(S.get("home_retry") or 0) or S.get("home_asked"):
+        bevo.status("home")
+        return
+    n = int(S.get("homes") or 0)
+    S["homes"] = n + 1
+    sent, total = wallet_home(n)
+    if sent:
+        S.setdefault("home_cash", total)
+    if sent == "sent":
+        if total < 1:
+            done_home("its withdrawal from Derive has not reached its wallet after a day, so nothing "
+                      "was sent home. Ask me to look.")
+        done_home("%s went back to your main wallet." % money(total))
+    if sent == "asked":
+        S["home_asked"] = True
+        bevo.notify("%s: its money is ready to go back to your main wallet. Approve the card to send it."
+                    % NAME, push="%s: approve to send its money home" % NAME)
+        bevo.status("home")
+        return
+    left = wallet_usdc()  # a fresh read: a send that errored may still have gone through
+    if cash is not None and cash >= 1 and left is not None and all(v < 1 for v in left.values()):
+        done_home("%s went back to your main wallet." % money(cash))
+    S["home_retry"] = now + 1800
+    if not S.get("home_said"):
+        S["home_said"] = True
+        bevo.notify("%s: sending its money back to your main wallet did not go through. It tries "
+                    "again every 30 minutes." % NAME, push="%s: not sent home yet" % NAME)
+    bevo.status("home")
 
 
 def sweep(account, market):
@@ -728,6 +905,9 @@ def act():
     # Before anything else: an order nobody is working cannot be left on the book.
     if track_orders(account):
         return
+    if S.get("home"):
+        go_home(account, now)
+        return
     if STOP:
         if open_orders(account) is None:
             bevo.status("unreadable")
@@ -763,5 +943,7 @@ for tick in bevo.ticks():
         continue
     try:
         run()
+    except Homeward:
+        pass
     except Exception as exc:
         say("run skipped: %s" % exc)

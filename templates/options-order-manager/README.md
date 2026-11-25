@@ -36,9 +36,12 @@ best quote; the duty asks again once the mark makes it fit.
 
 At the deadline (`WORK_MINUTES` from the start, never later than an hour before expiry)
 it cancels, asks the makers to beat the book, takes the book at `WORST_PRICE`, and
-sends a receipt: the average, the saving, and where each fill came from.
+sends a receipt: the average, the saving in dollars and percent, and where each fill came from.
 
-It finishes there. What it holds is watched to expiry by `options-lifecycle@12`.
+With `WITHDRAW_ON_FINISH` it then withdraws its free USDC from Derive (not under $3:
+Derive keeps about $1), waits for it to reach its wallet, and sends it to the main wallet
+with `bevo-wallet withdraw --amount`, no card. Then it finishes. What it holds is watched
+to expiry by `options-lifecycle@12`.
 
 ## What it will not do
 
@@ -66,9 +69,11 @@ It finishes there. What it holds is watched to expiry by `options-lifecycle@12`.
 | `SIZE` | contracts | the whole order |
 | `WORST_PRICE` | US dollars a contract, before fees | a sale never under it, a buy never over it |
 | `FEE_USD` | US dollars | the fill-now quote's `fee_usd` for SIZE |
-| `WORK_MINUTES` | minutes, default `240` | how long to work it |
+| `WORK_MINUTES` | minutes, default `240`, no maximum | how long to work it; it ends an hour before expiry whatever this says |
 | `STEP_MINUTES` | minutes, default `WORK_MINUTES / 8` (1 to 30) | how often it gives ground and asks the makers |
 | `TAKE_SAVING` | 0 to 1, default `0.5` | see above; `1` takes a maker only at the target |
 | `SIZE_STEP`, `MIN_SIZE`, `TICK_SIZE`, `MAKER_FEE_RATE` | | Derive's, from the quote |
 | `FILL_NOW_PRICE` | default `WORST_PRICE` | the book's price at filing, for the receipt |
+| `WITHDRAW_ON_FINISH` | `true` | after the receipt, its free USDC back to the main wallet |
+| `WALLET_LABEL` | the wallet's label | the wallet it sends home from; needed with `WITHDRAW_ON_FINISH` |
 | `STOP` | `true` | cancel what rests, send the receipt, finish |

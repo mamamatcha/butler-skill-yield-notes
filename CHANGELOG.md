@@ -22,16 +22,24 @@
   4-hour run that bought nothing). It is now `max_cost_usd` per contract on Derive's
   tick, with `FEE_USD` at that price and `FILL_NOW_PRICE` today's ask for the receipt;
   `fund_usdc` covers it. The ladder still starts at the mark and walks toward the live
-  ask; only the deadline may pay more, never past what the owner agreed.
+  ask. At the deadline the makers must beat the book and the book fills at its live
+  ask; the ceiling only bounds a market that moved, as it does a buy now.
 - **A worked buy is quick by default, and said as it runs.** 60 minutes for a buy
   (240 for a sale or close): each 1% the market moves while it waits is worth $50-140
-  on a $500 option, against a saving of $5-10. "Until I cancel" is said as 24 hours,
-  the most the recipe takes. The same chat promised a 10-day run and "no forced buy at
-  the end"; neither is what the duty does. A change while it runs is said from
+  on a $500 option, against a saving of $5-10. There is no longest run: "until I
+  cancel" runs to an hour before expiry, with the risk of waiting said. The same chat
+  promised "no forced buy at the end", which is not what the duty does. A change while it runs is said from
   `duty_show`, and the deadline is said as it is: it takes the book inside the ceiling.
 - **Money left in an earlier order's wallet is found and said.** Before a new order
   wallet, the finished order-manager duties' wallets are read, and free USDC there is
-  offered home. After a receipt, so is what was not spent.
+  offered home (an `@1` duty's, or under $3).
+- **`options-order-manager@2`: what it did not use comes home, and the receipt says the
+  saving in percent.** With `WITHDRAW_ON_FINISH` and `WALLET_LABEL` (always filed), after
+  the receipt it takes its free USDC off Derive into its own wallet and sends it to the
+  main wallet with no card, as a program duty's `--withdraw-on-finish` does; under $3
+  stays (Derive keeps about $1 a withdrawal), and so does what backs a position.
+  `WORK_MINUTES` has no maximum (it was 1,440); it still ends an hour before expiry. The
+  receipt reads "about $9.35 (9.9%) better in all, fees included".
 - **Ideas come before "the pick is yours".** `buying.md`: asked for ideas, the choices
   come first and the not-advice line after them, never as the opening sentence.
 
