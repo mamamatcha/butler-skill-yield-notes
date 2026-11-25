@@ -141,7 +141,7 @@
     "unreadable": "Couldn't read Derive \u00b7 retrying {next}",
     "paused_settings": "Paused: the settings need fixing",
     "stopped": "Stopped: the server refused its orders",
-    "home": "Sending what it didn't use home \u00b7 check {next}",
+    "home": "Sending unused cash home \u00b7 check {next}",
     "done": "Finished: {filled} of {size} filled"
   }
 }
